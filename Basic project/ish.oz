@@ -1,5 +1,11 @@
-local
-  X=x Y=y Z=z
-in
-  {Browse [X Y Z]}
+functor
+
+import
+
+Browser(browse:Browse)
+
+
+define
+{Browse "Hello World"}
+
 end
