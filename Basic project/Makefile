@@ -1,4 +1,5 @@
 main:
+	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c input.oz
 	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c main.oz
 	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c GUI.oz
 	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c player.oz

@@ -1,14 +1,16 @@
 functor
 import
-    Input
+    Input at 'Input.ozf'
+    Browser(browse:Browse)
 export
     portPlayer:StartPlayer
 define
     StartPlayer
     TreatStream
 in
-    proc{TreatStream Stream <p1> <p2> ...} % as as many parameters as you want
-        % ...
+
+    proc{TreatStream Stream} % as as many parameters as you want
+        {Browse "Hello World"}
     end
     fun{StartPlayer Color ID}
         Stream
@@ -16,7 +18,7 @@ in
     in
         {NewPort Stream Port}
         thread
-            {TreatStream Stream <p1> <p2> ...}
+            {TreatStream Stream}
         end
         Port
     end
