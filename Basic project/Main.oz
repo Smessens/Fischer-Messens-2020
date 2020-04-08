@@ -1,15 +1,14 @@
 functor
 import
-    GUI
-    Input
-    PlayerManager
+	GUI at 'GUI.ozf'
+
 define
-    % ...
+GUI_port
 
 in
 
-declare
-  {NewPort S P}
-  {Send P foo} {Send P bar}
+
+GUI_port = {GUI.portWindow}
+{Send GUI_port buildWindow}
 
 end
