@@ -5,6 +5,11 @@ import
     PlayerManager
 define
     % ...
+
 in
-    % ...
+
+declare
+  {NewPort S P}
+  {Send P foo} {Send P bar}
+
 end
