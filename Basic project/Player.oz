@@ -134,43 +134,45 @@ in
 
     proc {TreatStream Stream State}
        case Stream of nil then skip
-       [] initPosition(?ID ?Position)|T then {InitPosition ID Position}
+       [] initPosition(?ID ?Position)|T then
+                    {InitPosition ID Position 0}
+	                  {TreatStream T State}
+
+       [] move(?ID ?Position ?Direction)|T then {Move ID Position Direction  0}
 	  {TreatStream T State}
-       [] move(?ID ?Position ?Direction)|T then {Move ID Position Direction}
+       [] dive|T then {Dive State 0}
 	  {TreatStream T State}
-       [] dive|T then {Dive State}
+       [] chargeItem(?ID ?KindItem)|T then {ChargeItem ID KindItem 0}
 	  {TreatStream T State}
-       [] chargeItem(?ID ?KindItem)|T then {ChargeItem ID KindItem}
+       [] fireItem(?ID ?KindFire)|T then {FireItem ID KindFire 0}
 	  {TreatStream T State}
-       [] fireItem(?ID ?KindFire)|T then {FireItem ID KindFire}
+       [] fireMine(?ID ?Mine)|T then {FireMine ID Mine 0}
 	  {TreatStream T State}
-       [] fireMine(?ID ?Mine)|T then {FireMine ID Mine}
+       [] isDead(?Answer)|T then {IsDead Answer 0}
 	  {TreatStream T State}
-       [] isDead(?Answer)|T then {IsDead Answer}
+       [] sayMove(ID Direction)|T then {SayMove ID Direction 0}
 	  {TreatStream T State}
-       [] sayMove(ID Direction)|T then {SayMove ID Direction}
+       [] saySurface(ID)|T then {SaySurface ID 0}
 	  {TreatStream T State}
-       [] saySurface(ID)|T then {SaySurface ID}
+       [] sayCharge(ID KindItem)|T then {SayCharge ID KindItem 0}
 	  {TreatStream T State}
-       [] sayCharge(ID KindItem)|T then {SayCharge ID KindItem}
+       [] sayMinePlaced(ID)|T then {SayMinePlaced ID 0}
 	  {TreatStream T State}
-       [] sayMinePlaced(ID)|T then {SayMinePlaced ID}
+       [] sayMissileExplode(ID Position ?Message)|T then {SayMissileExplode ID Position Message 0}
 	  {TreatStream T State}
-       [] sayMissileExplode(ID Position ?Message)|T then {SayMissileExplode ID Position Message}
+       [] sayMineExplode(ID Position ?Message)|T then {SayMineExplode ID Position Message 0}
 	  {TreatStream T State}
-       [] sayMineExplode(ID Position ?Message)|T then {SayMineExplode ID Position Message}
+       [] sayPassingDrone(Drone ?ID ?Answer)|T then {SayPassingDrone Drone ID Answer 0}
 	  {TreatStream T State}
-       [] sayPassingDrone(Drone ?ID ?Answer)|T then {SayPassingDrone Drone ID Answer}
+       [] sayAnswerDrone(Drone ID Answer)|T then {SayAnswerDrone Drone ID Answer 0}
 	  {TreatStream T State}
-       [] sayAnswerDrone(Drone ID Answer)|T then {SayAnswerDrone Drone ID Answer}
+       [] sayPassingSonar(?ID ?Answer)|T then {SayPassingSonar ID Answer 0}
 	  {TreatStream T State}
-       [] sayPassingSonar(?ID ?Answer)|T then {SayPassingSonar ID Answer}
+       [] sayAnswerSonar(ID Answer)|T then {SayAnswerSonar ID Answer 0}
 	  {TreatStream T State}
-       [] sayAnswerSonar(ID Answer)|T then {SayAnswerSonar ID Answer}
+       [] sayDeath(ID)|T then {SayDeath ID 0}
 	  {TreatStream T State}
-       [] sayDeath(ID)|T then {SayDeath ID}
-	  {TreatStream T State}
-       [] sayDamageTaken(ID Damage LifeLeft)|T then {SayDamageTaken ID Damage LifeLeft}
+       [] sayDamageTaken(ID Damage LifeLeft)|T then {SayDamageTaken ID Damage LifeLeft 0}
 	  {TreatStream T State}
        end
     end
