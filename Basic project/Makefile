@@ -1,8 +1,10 @@
 main:
 	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c input.oz
-	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c main.oz
-	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c GUI.oz
+	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c playerManager.oz
 	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c player.oz
+	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c GUI.oz
+	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c main.oz
+
 	/Applications/Mozart2.app/Contents/Resources/bin/ozengine  main.ozf
 
 test:

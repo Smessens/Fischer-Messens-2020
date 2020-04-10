@@ -4,6 +4,7 @@ import
 
 define
 
+player
 GUI_port
 
 in
@@ -11,5 +12,9 @@ in
 
 GUI_port = {GUI.portWindow}
 {Send GUI_port buildWindow}
+
+
+
+
 
 end
