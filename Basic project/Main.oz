@@ -5,17 +5,19 @@ import
 	PlayerManager at 'PlayerManager.ozf'
 	Main at 'Main.ozf'
 	Browser(browse:Browse)
+	System
 
 define
 	GUI_port
 	CreatePlayer
-	Player
+	portPlayer1
+	portPlayer2
 	Position
 
-	proc {CreatePlayer}
-			{System.show surface(ID)}
 
-			Player={PlayerManager.playerGenerator 0 red 0}
+	proc {CreatePlayer}
+			portPlayer1={PlayerManager.playerGenerator 0 red 0}
+			portPlayer2={PlayerManager.playerGenerator 0 blue 1}
 	end
 
 
@@ -31,15 +33,22 @@ define
 
 in
 
+%%	{System.show 0}
+
 	GUI_port = {GUI.portWindow}
+	{System.show 5}
+
 	{Send GUI_port buildWindow}
+
+	{System.show 0}
 
 	{Main.CreatePlayer}
 
-
+	{System.show 31}
 
 	{Main.InitPlayer}
 	Position=pt(x:1 y:1)
   {GUI.initPlayer 0 Position}
+	{System.show 32}
 
 end
