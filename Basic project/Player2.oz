@@ -1,6 +1,7 @@
 functor
 import
     Input at 'Input.ozf'
+    Player at 'Player2.ozf'
     Browser(browse:Browse)
 export
     portPlayer:StartPlayer
@@ -168,7 +169,7 @@ in
 	  {TreatStream T State}
        [] sayPassingSonar(?ID ?Answer)|T then {SayPassingSonar ID Answer 0}
 	  {TreatStream T State}
-       [] sayAnswerSonar(ID Answer)|T then {SayAnswerSonar ID Answer 0}
+       [] sayAnswerSonar(ID Answer)|T then {Player.SayAnswerSonar ID Answer}
 	  {TreatStream T State}
        [] sayDeath(ID)|T then {SayDeath ID 0}
 	  {TreatStream T State}
