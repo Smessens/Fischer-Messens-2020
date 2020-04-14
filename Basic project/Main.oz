@@ -3,52 +3,40 @@ import
 	GUI at 'GUI.ozf'
 	Input at 'Input.ozf'
 	PlayerManager at 'PlayerManager.ozf'
-	Main at 'Main.ozf'
-	Browser(browse:Browse)
 	System
-
 define
+
 	GUI_port
-	CreatePlayer
-	portPlayer1
-	portPlayer2
-	Position
+	List
+	Position1
+	Position2
 
 
-	proc {CreatePlayer}
-			portPlayer1={PlayerManager.playerGenerator 0 red 0}
-			portPlayer2={PlayerManager.playerGenerator 0 blue 1}
-	end
-
-
-	proc {InitPlayer Player}
-		local PlayerID Position in
-			{Send Player.port initPosition(PlayerID Position)}
-
-			{Wait PlayerID}
-			{Wait Position}
-			{Send GUI_port initPlayer(PlayerID Position)}
-		end
-	end
 
 in
 
-%%	{System.show 0}
 
-	GUI_port = {GUI.portWindow}
-	{System.show 5}
+GUI_port = {GUI.portWindow}
+{Send GUI_port buildWindow}
 
-	{Send GUI_port buildWindow}
+{System.show gui}
 
-	{System.show 0}
 
-	{Main.CreatePlayer}
 
-	{System.show 31}
+{System.show playerlisst}
 
-	{Main.InitPlayer}
-	Position=pt(x:1 y:1)
-  {GUI.initPlayer 0 Position}
-	{System.show 32}
+Position1=pt(x:1 y:1)
+{Send {PlayerManager.playerGenerator player1 red 1} initPosition(1 Position1)}
+{Send GUI_port initPlayer(1 Position1)}
 
-end
+{System.show playerlisst}
+
+Position2=pt(x:2 y:2)
+{Send {PlayerManager.playerGenerator player2 blue 2} initPosition(2 Position2)}
+{Send GUI_port initPlayer(2 Position2)}
+
+
+
+{System.show done}
+
+end /*define*/
