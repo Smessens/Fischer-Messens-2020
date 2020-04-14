@@ -27,31 +27,51 @@ define
    SayAnswerSonar
    SayDeath
    SayDamageTaken
+
+   %fcts ajoutées
+   IsIsland
+   Histo
+   IsValidPath
+   TrouverMap
 in
 
-   
-
-   fun{Move ?ID ?Position ?Direction}
-
-      %PlayerState.id=ID
-      %case Direction of east then pt(x:PlayerState.pos.x y:PlayerState.pos.y+1)
-      %[] south then pt(x:PlayerState.pos.x+1 y:PlayerState.pos.y)
-      %[] west then pt(x:PlayerState.pos.x y:PlayerState.pos.y-1)
-      %[] north then pt(x:PlayerState.pos.x-1 y:PlayerState.pos.y)
-      %[] surface then PlayerState.immersed=true
-      {Browse 1}
-
-
-
+   fun{IsIsland L X Y} %testé et approuvé 
+      local IsIsland2 in
+	 fun{IsIsland2 M A}
+	    if A==1 then M.1
+	    else {IsIsland2 M.2 A-1}
+	    end
+	 end
+	 {IsIsland2 {IsIsland2 L X} Y}
+      end
    end
-   %Je suppose qu'il n'existe aucune colonne avec que des 1
-   fun {TrouverMap L}
-      fun {TrouverMap2 L1 X}
-	 case L1 of L1.1.1==0 then pt(x:X y:0)
-	 else {TrouverMap L1.2 X+1}
+
+   fun{Histo L E} %testé et approuvé 
+      case L of nil then true
+      [] H|T then
+	 if H==E then false
+	 else {Histo T E}
 	 end
       end
-      {TrouverMap2 L 0}
+   end
+
+   fun{IsValidPath L E} %testé et approuvé 
+      local X Y in 
+	 pt(x:X y:Y)=E
+	 (X >= 1 andthen X =< Input.nRow andthen Y >= 1 andthen Y =< Input.nColumn) andthen {IsIsland Input.map X Y} == 0 andthen {Histo L E}
+      end 
+   end
+   
+   %Je suppose qu'il n'existe aucune colonne avec que des 1
+   fun {TrouverMap L} %testé et approuvé
+      local TrouverMap2 in 
+	 fun {TrouverMap2 L1 X}
+	    if L1.1.1==0 then pt(x:X y:0)
+	    else {TrouverMap2 L1.2 X+1}
+	    end
+	 end
+	 {TrouverMap2 L 0}
+      end
    end
    
 
@@ -141,13 +161,34 @@ in
       case Stream of nil then skip
       [] initPosition(?ID ?Position)|T then
 	 ID=State.id
-	 L=Input.map
-	 Position={TrouverMap L}
+	 Position={TrouverMap Input.map}
 	 local Newstate in
 	    Newstate={Record.adjoin State player(path:Position|nil)}
 	    {TreatStream T Newstate}
 	 end
-      [] move(?ID ?Position ?Direction)|T then {Move ID Position Direction  0}
+      [] move(?ID ?Position ?Direction)|T then
+	 ID=State.id
+	 local CandPos in 
+	    case Direction of east then CandPos=pt(x:State.pos.x y:State.pos.y+1)
+	    [] south then CandPos=pt(x:State.pos.x+1 y:State.pos.y)
+	    [] west then CandPos=pt(x:State.pos.x y:State.pos.y-1)
+	    [] north then CandPos=pt(x:State.pos.x-1 y:State.pos.y)
+	    [] surface then
+	       local Newstate in
+		  Newstate={Record.adjoin State player(immersed:false path:State.pos|nil)}
+		  {TreatStream T Newstate}
+	       end
+	    end
+	    if({IsValidPath State.path CandPos}==false) then skip  
+	    else
+	       Position=CandPos
+	       local Newstate in
+		  Newstate={Record.adjoin State player(pos:Position path:Position|State.path)}
+		  {TreatStream T Newstate}
+	       end
+	    end
+	 end
+	 
 	 {TreatStream T State}
       [] dive|T then {Dive State 0}
 	 {TreatStream T State}
@@ -187,3 +228,4 @@ in
    end
 
 end
+
