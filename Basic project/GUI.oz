@@ -104,7 +104,7 @@ in
 
 %%%%% Init the submarine
 	fun{DrawSubmarine Grid ID Position}
-		Handle HandlePath HandleScore X Y Id Color LabelSub LabelScore
+		Handle HandlePath HandleScore X Y Id Color Name LabelSub LabelScore
 	in
 		pt(x:X y:Y) = Position
 
@@ -116,11 +116,11 @@ in
 
 
 
-		id(id:Id color:Color name:_) = ID
+		id(id:Id color:Color name:Name) = ID
 
 
 		{System.show prost}
-		LabelSub = label(text:"S" handle:Handle borderwidth:5 relief:raised bg:Color ipadx:5 ipady:5)
+		LabelSub = label(text:Name handle:Handle borderwidth:5 relief:raised bg:Color ipadx:5 ipady:5)
 		LabelScore = label(text:Input.maxDamage borderwidth:5 handle:HandleScore relief:solid bg:Color ipadx:5 ipady:5)
 		HandlePath = {DrawPath Grid Color X Y}
 		{Grid.grid configure(LabelSub row:X+1 column:Y+1 sticky:wesn)}

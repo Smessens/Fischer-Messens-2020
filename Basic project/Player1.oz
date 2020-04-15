@@ -66,7 +66,7 @@ in
    fun {TrouverMap L} %testé et approuvé
       local TrouverMap2 in
 	 fun {TrouverMap2 L1 X}
-	     pt(x:1 y:1)
+	     pt(x:5 y:5)
 	 end
 	 {TrouverMap2 L 1}
       end
@@ -142,7 +142,7 @@ in
       PlayerState
    in
       %immersed pour savoir si il est en surface ou pas
-      PlayerState = player(id:ID color:Color path:_ pos:_ immersed:_ )%LoadMine:_ )%NumberMine:_ LoadMissile:_ NumberMissile:_ LoadDrone:_ NumberDrone:_ LoadSonar:_ NumberSonar:_)
+      PlayerState = player(id:ID color:Color path:_ pos:_ immersed:true )%LoadMine:_ )%NumberMine:_ LoadMissile:_ NumberMissile:_ LoadDrone:_ NumberDrone:_ LoadSonar:_ NumberSonar:_)
       {NewPort Stream Port}
       thread
 	 {TreatStream Stream PlayerState}
