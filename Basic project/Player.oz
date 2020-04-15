@@ -32,7 +32,8 @@ define
    IsIsland
    Histo
    IsValidPath
-   TrouverMap
+   Random
+   RandomPosition
 in
 
    fun{IsIsland L X Y} %testé et approuvé 
@@ -63,19 +64,46 @@ in
    end
    
    %Je suppose qu'il n'existe aucune colonne avec que des 1
-   fun {TrouverMap L} %testé et approuvé
-      local TrouverMap2 in 
-	 fun {TrouverMap2 L1 X}
-	    if L1.1.1==0 then pt(x:X y:0)
-	    else {TrouverMap2 L1.2 X+1}
-	    end
+   fun {Random N}
+      {OS.rand} mod N + 1
+   end
+   
+   fun{RandomPosition M}
+      local X Y in
+	 X={Random Input.nRow}
+	 Y={Random Input.nColumn}
+	 if {IsIsland M X Y}==0 then pt(x:X y:Y)
+	 else {RandomPosition M}
 	 end
-	 {TrouverMap2 L 1}
       end
    end
 
    fun{ChargeItem ?KindItem State}
-      {Browse 1}
+      case KindItem of mine then
+	 if State.LoadMine+1==Inputmine then player(LoadMine:0 NumberMine:State.NumberMine+1)
+	 else
+	    KindItem=null
+	    player(LoadMine:State.LoadMine+1)
+	 end
+      [] missile then
+	 if State.LoadMissile+1==Inputmissile then player(LoadMissile:0 NumberMissile:State.NumberMissile+1)
+	 else
+	    KindItem=null
+	    player(LoadMissile:State.LoadMissile+1)
+	 end
+      [] drone then
+	 if State.LoadDrone+1==Inputdrone then player(LoadDrone:0 NumberDrone:State.NumberDrone+1)
+	 else
+	    KindItem=null
+	    player(LoadDrone:State.LoadDrone+1)
+	 end
+      [] sonar then
+	 if State.LoadSonar+1==Inputsonar then player(LoadSonar:0 NumberSonar:State.NumberSonar+1)
+	 else
+	    KindItem=null
+	    player(LoadSonar:State.LoadSonar+1)
+	 end
+      end  
    end
 
    fun{FireItem ?ID ?KindFire}
@@ -144,7 +172,7 @@ in
       PlayerState
    in
       %immersed pour savoir si il est en surface ou pas
-      PlayerState = player(id:ID color:Color path:_ pos:_ immersed:_ LoadMine:_ NumberMine:_ LoadMissile:_ NumberMissile: LoadDrone:_ NumberDrone:_ LoadSonar:_ NumberSonar:_)
+      PlayerState = player(id:ID color:Color path:nil pos:nil immersed:true LoadMine:0 NumberMine:0 LoadMissile:0 NumberMissile:0 LoadDrone:0 NumberDrone:0 LoadSonar:0 NumberSonar:0)
       {NewPort Stream Port}
       thread
 	 {TreatStream Stream PlayerState}
@@ -156,7 +184,7 @@ in
       case Stream of nil then skip
       [] initPosition(?ID ?Position)|T then
 	 ID=State.id
-	 Position={TrouverMap Input.map}
+	 Position={RandomPosition Input.map}
 	 local Newstate in
 	    Newstate={Record.adjoin State player(path:Position|nil)}
 	    {TreatStream T Newstate}
