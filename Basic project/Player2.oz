@@ -2,8 +2,7 @@ functor
 import
    Input at 'Input.ozf'
    Browser(browse:Browse)
-   Player at 'Player2.ozf'
-   System
+   Player at 'Player.2ozf'
 export
    portPlayer:StartPlayer
 define
@@ -67,20 +66,13 @@ in
    fun {TrouverMap L} %testé et approuvé
       local TrouverMap2 in
 	 fun {TrouverMap2 L1 X}
-	    if L1.1.1==0 then pt(x:X y:0)
-	    else {TrouverMap2 L1.2 X+1}
-	    end
+      pt(x:2 y:2)
 	 end
-	 {TrouverMap2 L 0}
+	 {TrouverMap2 L 1}
       end
    end
 
-
-   fun{Dive State}
-      {Browse 1}
-   end
-
-   fun{ChargeItem ?ID ?KindItem}
+   fun{ChargeItem ?KindItem State}
       {Browse 1}
    end
 
@@ -150,7 +142,7 @@ in
       PlayerState
    in
       %immersed pour savoir si il est en surface ou pas
-      PlayerState = player(id:ID color:Color path:_ pos:_ immersed:_)
+      PlayerState = player(id:ID color:Color path:_ pos:_ immersed:_ )%LoadMine:_)% NumberMine:_ LoadMissile:_ NumberMissile:_ LoadDrone:_ NumberDrone:_ LoadSonar:_ NumberSonar:_)
       {NewPort Stream Port}
       thread
 	 {TreatStream Stream PlayerState}
@@ -168,7 +160,6 @@ in
 	    {TreatStream T Newstate}
 	 end
       [] move(?ID ?Position ?Direction)|T then
-   {System.show 1234}
 	 ID=State.id
 	 local CandPos in
 	    case Direction of east then CandPos=pt(x:State.pos.x y:State.pos.y+1)
@@ -181,8 +172,7 @@ in
 		  {TreatStream T Newstate}
 	       end
 	    end
-	    if({IsValidPath State.path CandPos}==false) then skip
-	    else
+	    if({IsValidPath State.path CandPos}==true) then
 	       Position=CandPos
 	       local Newstate in
 		  Newstate={Record.adjoin State player(pos:Position path:Position|State.path)}
@@ -190,12 +180,19 @@ in
 	       end
 	    end
 	 end
+	 {TreatStream T State}
+      [] dive|T then
+	 local Newstate in
+	    Newstate={Record.adjoin State player(immersed:true)}
+	    {TreatStream T Newstate}
+	 end
+      [] chargeItem(?ID ?KindItem)|T then
+	 ID=State.id
+	 local Newstate in
+	    Newstate={Record.adjoin State {ChargeItem ?KindItem State}}
+	    {TreatStream T Newstate}
+	 end
 
-	 {TreatStream T State}
-      [] dive|T then {Dive State 0}
-	 {TreatStream T State}
-      [] chargeItem(?ID ?KindItem)|T then {ChargeItem ID KindItem 0}
-	 {TreatStream T State}
       [] fireItem(?ID ?KindFire)|T then {FireItem ID KindFire 0}
 	 {TreatStream T State}
       [] fireMine(?ID ?Mine)|T then {FireMine ID Mine 0}

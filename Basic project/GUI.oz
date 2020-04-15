@@ -107,13 +107,18 @@ in
 		Handle HandlePath HandleScore X Y Id Color LabelSub LabelScore
 	in
 		pt(x:X y:Y) = Position
-		{System.show bite}
+
+		{System.show newsub}
 		{System.show Id}
 		{System.show Color}
 		{System.show X}
+		{System.show Y}
+
 
 
 		id(id:Id color:Color name:_) = ID
+
+
 		{System.show prost}
 		LabelSub = label(text:"S" handle:Handle borderwidth:5 relief:raised bg:Color ipadx:5 ipady:5)
 		LabelScore = label(text:Input.maxDamage borderwidth:5 handle:HandleScore relief:solid bg:Color ipadx:5 ipady:5)
@@ -229,6 +234,7 @@ in
 		case State
 		of nil then nil
 		[] guiPlayer(id:ID score:HandleScore submarine:Handle mines:M path:P)|Next then
+			{HandleScore set(0)}
 			if (ID == WantedID) then
 				{HandleScore set(0)}
 				for H in P do
