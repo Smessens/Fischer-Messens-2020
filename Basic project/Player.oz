@@ -34,9 +34,10 @@ define
    IsValidPath
    Random
    RandomPosition
+   FindInList
 in
 
-   fun{IsIsland L X Y} %testé et approuvé 
+   fun{IsIsland L X Y} %testé et approuvé
       local IsIsland2 in
 	 fun{IsIsland2 M A}
 	    if A==1 then M.1
@@ -47,7 +48,7 @@ in
       end
    end
 
-   fun{Histo L E} %testé et approuvé 
+   fun{Histo L E} %testé et approuvé
       case L of nil then true
       [] H|T then
 	 if H==E then false
@@ -56,18 +57,19 @@ in
       end
    end
 
-   fun{IsValidPath L E} %testé et approuvé 
-      local X Y in 
+   fun{IsValidPath L E} %testé et approuvé
+      local X Y in
 	 pt(x:X y:Y)=E
 	 (X >= 1 andthen X =< Input.nRow andthen Y >= 1 andthen Y =< Input.nColumn) andthen {IsIsland Input.map X Y} == 0 andthen {Histo L E}
-      end 
+      end
    end
-   
+
    %Je suppose qu'il n'existe aucune colonne avec que des 1
    fun {Random N}
       {OS.rand} mod N + 1
    end
-   
+
+
    fun{RandomPosition M}
       local X Y in
 	 X={Random Input.nRow}
@@ -78,32 +80,61 @@ in
       end
    end
 
+   fun {FindInList L N}
+      if N==1 then L.1
+      else {FindInList L.2 N-1}
+      end
+   end
+
+   fun{Move ?Position State}
+      local PotDirection Direction CandPos in
+	 PotDirection=[east south west north surface]
+	 Direction={FindInList PotDirection {Random 5}}
+	 case Direction of east then CandPos=pt(x:State.pos.x y:State.pos.y+1)
+	 [] south then CandPos=pt(x:State.pos.x+1 y:State.pos.y)
+	 [] west then CandPos=pt(x:State.pos.x y:State.pos.y-1)
+	 [] north then CandPos=pt(x:State.pos.x-1 y:State.pos.y)
+	 [] surface then
+	    Position=State.pos
+	    {Record.adjoin State player(immersed:false path:Position|nil)}
+	 end
+	 if({IsValidPath State.path CandPos}==true) then
+	    Position=CandPos
+	    {Record.adjoin State player(pos:Position path:Position|State.path)}
+	 end
+      end
+   end
+
    fun{ChargeItem ?KindItem State}
       case KindItem of mine then
-	 if State.LoadMine+1==Inputmine then player(LoadMine:0 NumberMine:State.NumberMine+1)
+	 if State.loadMine+1==Input.mine then
+	    {Record.adjoin State player(loadMine:0 numberMine:State.numberMine+1)}
 	 else
 	    KindItem=null
-	    player(LoadMine:State.LoadMine+1)
+	    {Record.adjoin State player(loadMine:State.loadMine+1)}
 	 end
       [] missile then
-	 if State.LoadMissile+1==Inputmissile then player(LoadMissile:0 NumberMissile:State.NumberMissile+1)
+	 if State.loadMissile+1==Input.missile then
+	    {Record.adjoin State player(loadMissile:0 numberMissile:State.numberMissile+1)}
 	 else
 	    KindItem=null
-	    player(LoadMissile:State.LoadMissile+1)
+	    {Record.adjoin State player(loadMissile:State.loadMissile+1)}
 	 end
       [] drone then
-	 if State.LoadDrone+1==Inputdrone then player(LoadDrone:0 NumberDrone:State.NumberDrone+1)
+	 if State.loadDrone+1==Input.drone then
+	    {Record.adjoin State player(loadDrone:0 numberDrone:State.numberDrone+1)}
 	 else
 	    KindItem=null
-	    player(LoadDrone:State.LoadDrone+1)
+	    {Record.adjoin State player(loadDrone:State.loadDrone+1)}
 	 end
       [] sonar then
-	 if State.LoadSonar+1==Inputsonar then player(LoadSonar:0 NumberSonar:State.NumberSonar+1)
+	 if State.loadSonar+1==Input.sonar then
+	    {Record.adjoin State player(loadSonar:0 numberSonar:State.numberSonar+1)}
 	 else
 	    KindItem=null
-	    player(LoadSonar:State.LoadSonar+1)
+	    {Record.adjoin State player(loadSonar:State.loadSonar+1)}
 	 end
-      end  
+      end
    end
 
    fun{FireItem ?ID ?KindFire}
@@ -172,7 +203,7 @@ in
       PlayerState
    in
       %immersed pour savoir si il est en surface ou pas
-      PlayerState = player(id:ID color:Color path:nil pos:nil immersed:true LoadMine:0 NumberMine:0 LoadMissile:0 NumberMissile:0 LoadDrone:0 NumberDrone:0 LoadSonar:0 NumberSonar:0)
+      PlayerState = player(id(id:ID color:Color name:_) path:_ pos:_ immersed:_ loadMine:_ numberMine:_ loadMissile:_ numberMissile:_ loadDrone:_ numberDrone:_ loadSonar:_ numberSonar:_)
       {NewPort Stream Port}
       thread
 	 {TreatStream Stream PlayerState}
@@ -191,26 +222,10 @@ in
 	 end
       [] move(?ID ?Position ?Direction)|T then
 	 ID=State.id
-	 local CandPos in 
-	    case Direction of east then CandPos=pt(x:State.pos.x y:State.pos.y+1)
-	    [] south then CandPos=pt(x:State.pos.x+1 y:State.pos.y)
-	    [] west then CandPos=pt(x:State.pos.x y:State.pos.y-1)
-	    [] north then CandPos=pt(x:State.pos.x-1 y:State.pos.y)
-	    [] surface then
-	       local Newstate in
-		  Newstate={Record.adjoin State player(immersed:false path:State.pos|nil)}
-		  {TreatStream T Newstate}
-	       end
-	    end
-	    if({IsValidPath State.path CandPos}==true) then 
-	       Position=CandPos
-	       local Newstate in
-		  Newstate={Record.adjoin State player(pos:Position path:Position|State.path)}
-		  {TreatStream T Newstate}
-	       end
-	    end
+	 local Newstate in
+	    Newstate={{Move Position State} State}
+	    {TreatStream T Newstate}
 	 end
-	 {TreatStream T State}
       [] dive|T then
 	 local Newstate in
 	    Newstate={Record.adjoin State player(immersed:true)}
@@ -218,11 +233,11 @@ in
 	 end
       [] chargeItem(?ID ?KindItem)|T then
 	 ID=State.id
-	 local Newstate in 
-	    Newstate={Record.adjoin State {ChargeItem ?KindItem State}}
+	 local Newstate in
+	    Newstate={{ChargeItem ?KindItem State} State}
 	    {TreatStream T Newstate}
-	 end  
-	 
+	 end
+	 {TreatStream T {ChargeItem KindItem State}}
       [] fireItem(?ID ?KindFire)|T then {FireItem ID KindFire 0}
 	 {TreatStream T State}
       [] fireMine(?ID ?Mine)|T then {FireMine ID Mine 0}
@@ -257,4 +272,3 @@ in
    end
 
 end
-
