@@ -1,7 +1,7 @@
 functor
 import
-	Player1 at 'Player1.ozf'
-	Player2 at 'Player2.ozf'
+	Player1 at 'PlayerBasicAI.ozf'
+	Player2 at 'PlayerBasicAI2.ozf'
 export
 	playerGenerator:PlayerGenerator
 define
