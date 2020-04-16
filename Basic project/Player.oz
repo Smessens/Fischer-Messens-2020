@@ -35,6 +35,7 @@ define
    Random
    RandomPosition
    FindInList
+   RemoveFromList
 in
 
    fun{IsIsland L X Y} %testé et approuvé
@@ -83,6 +84,15 @@ in
    fun {FindInList L N}
       if N==1 then L.1
       else {FindInList L.2 N-1}
+      end
+   end
+
+   fun{RemoveFromList L A}
+      case L of nil then nil
+      [] H|T then
+	 if H==A then {RemoveFromList T A}
+	 else H|{RemoveFromList T A}
+	 end
       end
    end
 
@@ -137,9 +147,47 @@ in
       end
    end
 
-   fun{FireItem ?ID ?KindFire}
-      {Browse 1}
+   fun{FireItem ?KindFire ListFire State}
+      if ListFire==nil then
+	 KindFire=null
+	 skip
+      end 
+      local Fire in
+	 Fire={FindInList ListFire {Random {List.Length ListFire}}}
+	       case Fire of mine then
+		  if State.numberMine<1 then
+		     {FireItem ?KindFire {RemoveFromList ListFire mine} State}
+		  else
+		     KindFire=mine({RandomPosition Input.map})
+		     {Record.ajdoin State player(listMine:KindFire|State.listMine numberMine:State.numberMine-1)}
+		  end	       
+	       [] missile then
+		  if State.numberMissile>0 then
+		     KindFire=missile({RandomPosition Input.map})
+		     {Record.ajdoin State player(listMissile:KindFire|State.listMissile numberMissile:State.numberMissile-1)}
+		  else
+		     {FireItem ?KindFire {RemoveFromList ListFire missile} State}
+		  end
+	       [] drone then
+		  if State.numberDrone>0 then
+		     KindFire=drone(row:{Random Input.nrow})
+		     {Record.ajdoin State player(numberDrone:State.numberDrone-1)}
+		  else
+		     {FireItem ?KindFire {RemoveFromList ListFire drone} State}
+		  end
+	       [] sonar then
+		  if State.numberSonar>0 then
+		     KindFire=sonar
+		     {Record.ajdoin State player(numberSonar:State.numberSonar-1)}
+		  else
+		     {FireItem ?KindFire {RemoveFromList ListFire sonar} State}
+		  end
+	       end
+      end
    end
+	       
+	       
+	       
 
    fun{FireMine ?ID ?Mine}
       {Browse 1}
@@ -203,7 +251,7 @@ in
       PlayerState
    in
       %immersed pour savoir si il est en surface ou pas
-      PlayerState = player(id(id:ID color:Color name:_) path:_ pos:_ immersed:_ loadMine:_ numberMine:_ loadMissile:_ numberMissile:_ loadDrone:_ numberDrone:_ loadSonar:_ numberSonar:_)
+      PlayerState = player(id(id:ID color:Color name:_) path:_ pos:_ immersed:_ listMine:_ loadMine:_ numberMine:_ listMissile:_ loadMissile:_ numberMissile:_ loadDrone:_ numberDrone:_ loadSonar:_ numberSonar:_)
       {NewPort Stream Port}
       thread
 	 {TreatStream Stream PlayerState}
@@ -237,9 +285,12 @@ in
 	    Newstate={{ChargeItem ?KindItem State} State}
 	    {TreatStream T Newstate}
 	 end
-	 {TreatStream T {ChargeItem KindItem State}}
-      [] fireItem(?ID ?KindFire)|T then {FireItem ID KindFire 0}
-	 {TreatStream T State}
+      [] fireItem(?ID ?KindFire)|T then ID=State.id
+	 local Newstate ListFire in
+	    ListFire=[mine missile drone sonar]
+	    Newstate={{FireItem ?KindFire ListFire State} State}
+	    {TreatStream T Newstate}
+	 end
       [] fireMine(?ID ?Mine)|T then {FireMine ID Mine 0}
 	 {TreatStream T State}
       [] isDead(?Answer)|T then {IsDead Answer 0}
@@ -270,5 +321,5 @@ in
 	 {TreatStream T State}
       end
    end
-
 end
+
