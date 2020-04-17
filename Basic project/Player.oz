@@ -195,7 +195,7 @@ in
       end
    end
 
-   fun{SayMove ID Direction State}
+   fun{SayMove Direction State}
       {Browse 1}
    end
 
@@ -219,16 +219,16 @@ in
       {Browse 1}
    end
 
-   fun{SayPassingDrone Drone ?ID ?Answer State}
+   fun{SayPassingDrone Drone State}
       case Drone of drone(x Xp) then
-	 if State.pos.x==Xp then Answer=true
-	 else Answer=false
+	 if State.pos.x==Xp then true
+	 else false
 	 end
       [] drone(y Yp) then
-	 if State.pos.y==Yp then Answer=true
-	 else Answer=false
+	 if State.pos.y==Yp then true
+	 else false
 	 end
-      else Answer=false
+      else false
       end
    end
 
@@ -236,22 +236,22 @@ in
       {Browse 1}
    end
 
-   fun{SayPassingDrone ?Answer State}
+   fun{SayPassingSonar State}
       local R C in
 	 R={Random 2}
 	 if R==1 then
 	    C={Random Input.nColumn}
 	    if {IsIsland Input.Map State.pos.x C}==0 then
-	       Answer=pt(x:State.pos.x y:C)
+	       pt(x:State.pos.x y:C)
 	    else
-	       {SayPassingDrone ?Answer State}
+	       {SayPassingSonar State}
 	    end
 	 else
 	    C={Random Input.nRow}
 	    if {IsIsland Input.Map C State.pos.y}==0 then
-	       Answer=pt(x:C y:State.pos.y)
+	       pt(x:C y:State.pos.y)
 	    else
-	       {SayPassingDrone ?Answer State}
+	       {SayPassingSonar State}
 	    end
 	 end
       end
@@ -288,7 +288,7 @@ in
 	 ID=State.id
 	 Position={RandomPosition Input.map}
 	 local Newstate in
-	    Newstate={Record.adjoin State player(path:Position|nil)}
+	    Newstate={Record.adjoin State player(pos:Position path:Position|nil)}
 	    {TreatStream T Newstate}
 	 end
       [] move(?ID ?Position ?Direction)|T then
@@ -308,13 +308,15 @@ in
 	    Newstate={{ChargeItem ?KindItem State} State}
 	    {TreatStream T Newstate}
 	 end
-      [] fireItem(?ID ?KindFire)|T then ID=State.id
+      [] fireItem(?ID ?KindFire)|T then
+	 ID=State.id
 	 local Newstate ListFire in
 	    ListFire=[mine missile drone sonar]
 	    Newstate={{FireItem ?KindFire ListFire State} State}
 	    {TreatStream T Newstate}
 	 end
       [] fireMine(?ID ?Mine)|T then
+	 ID=State.id
 	 local Newstate in
 	    Newstate={{FireMine ?Mine State} State}
 	    {TreatStream T Newstate}
@@ -325,10 +327,8 @@ in
 	 end
 	 {TreatStream T State}
       [] sayMove(ID Direction)|T then
-	 local Newstate in
-	    Newstate={{SayMove ID Direction State} State}
-	    {TreatStream T Newstate}
-	 end
+	 {SayMove Direction State 0}
+	 {TreatStream T State}
       [] saySurface(ID)|T then {SaySurface ID 0}
 	 {TreatStream T State}
       [] sayCharge(ID KindItem)|T then {SayCharge ID KindItem 0}
@@ -341,13 +341,13 @@ in
 	 {TreatStream T State}
       [] sayPassingDrone(Drone ?ID ?Answer)|T then
 	 ID=State.id
-	 {SayPassingDrone Drone ?Answer State}
+	 Answer={SayPassingDrone Drone State}
 	 {TreatStream T State}
       [] sayAnswerDrone(Drone ID Answer)|T then {SayAnswerDrone Drone ID Answer 0}
 	 {TreatStream T State}
       [] sayPassingSonar(?ID ?Answer)|T then
 	 ID=State.id
-	 {SayPassingDrone ?Answer State}
+	 Answer={SayPassingSonar State}
 	 {TreatStream T State}
       [] sayAnswerSonar(ID Answer)|T then {SayAnswerSonar ID Answer 0}
 	 {TreatStream T State}
