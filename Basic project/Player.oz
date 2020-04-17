@@ -3,6 +3,7 @@ import
    Input at 'Input.ozf'
    Browser(browse:Browse)
    Player at 'Player.ozf'
+   OS
 export
    portPlayer:StartPlayer
 define
@@ -194,11 +195,7 @@ in
       end
    end
 
-   fun{IsDead ?Answer}
-      {Browse 1}
-   end
-
-   fun{SayMove ID Direction}
+   fun{SayMove ID Direction State}
       {Browse 1}
    end
 
@@ -222,16 +219,42 @@ in
       {Browse 1}
    end
 
-   fun{SayPassingDrone Drone ?ID ?Answer}
-      {Browse 1}
+   fun{SayPassingDrone Drone ?ID ?Answer State}
+      case Drone of drone(x Xp) then
+	 if State.pos.x==Xp then Answer=true
+	 else Answer=false
+	 end
+      [] drone(y Yp) then
+	 if State.pos.y==Yp then Answer=true
+	 else Answer=false
+	 end
+      else Answer=false
+      end
    end
 
    fun{SayAnswerDrone Drone ID Answer}
       {Browse 1}
    end
 
-   fun{SayPassingSonar ?ID ?Answer}
-      {Browse 1}
+   fun{SayPassingDrone ?Answer State}
+      local R C in
+	 R={Random 2}
+	 if R==1 then
+	    C={Random Input.nColumn}
+	    if {IsIsland Input.Map State.pos.x C}==0 then
+	       Answer=pt(x:State.pos.x y:C)
+	    else
+	       {SayPassingDrone ?Answer State}
+	    end
+	 else
+	    C={Random Input.nRow}
+	    if {IsIsland Input.Map C State.pos.y}==0 then
+	       Answer=pt(x:C y:State.pos.y)
+	    else
+	       {SayPassingDrone ?Answer State}
+	    end
+	 end
+      end
    end
 
    fun{SayAnswerSonar ID Answer}
@@ -251,8 +274,7 @@ in
       Port
       PlayerState
    in
-      %immersed pour savoir si il est en surface ou pas
-      PlayerState = player(id(id:ID color:Color name:'Player') path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)
+      PlayerState = player(id(id:ID color:Color name:'Player') enemyPath:nil path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)
       {NewPort Stream Port}
       thread
 	 {TreatStream Stream PlayerState}
@@ -297,10 +319,16 @@ in
 	    Newstate={{FireMine ?Mine State} State}
 	    {TreatStream T Newstate}
 	 end
-      [] isDead(?Answer)|T then {IsDead Answer 0}
+      [] isDead(?Answer)|T then
+	 if State.life==0 then Answer=true
+	 else Answer=false
+	 end
 	 {TreatStream T State}
-      [] sayMove(ID Direction)|T then {SayMove ID Direction 0}
-	 {TreatStream T State}
+      [] sayMove(ID Direction)|T then
+	 local Newstate in
+	    Newstate={{SayMove ID Direction State} State}
+	    {TreatStream T Newstate}
+	 end
       [] saySurface(ID)|T then {SaySurface ID 0}
 	 {TreatStream T State}
       [] sayCharge(ID KindItem)|T then {SayCharge ID KindItem 0}
@@ -311,11 +339,15 @@ in
 	 {TreatStream T State}
       [] sayMineExplode(ID Position ?Message)|T then {SayMineExplode ID Position Message 0} %simon 
 	 {TreatStream T State}
-      [] sayPassingDrone(Drone ?ID ?Answer)|T then {SayPassingDrone Drone ID Answer 0}
+      [] sayPassingDrone(Drone ?ID ?Answer)|T then
+	 ID=State.id
+	 {SayPassingDrone Drone ?Answer State}
 	 {TreatStream T State}
       [] sayAnswerDrone(Drone ID Answer)|T then {SayAnswerDrone Drone ID Answer 0}
 	 {TreatStream T State}
-      [] sayPassingSonar(?ID ?Answer)|T then {SayPassingSonar ID Answer 0}
+      [] sayPassingSonar(?ID ?Answer)|T then
+	 ID=State.id
+	 {SayPassingDrone ?Answer State}
 	 {TreatStream T State}
       [] sayAnswerSonar(ID Answer)|T then {SayAnswerSonar ID Answer 0}
 	 {TreatStream T State}
