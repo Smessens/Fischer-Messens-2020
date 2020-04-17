@@ -2,8 +2,9 @@ functor
 import
    Input at 'Input.ozf'
    Browser(browse:Browse)
-   Player at 'Player.ozf'
+   Player at 'Player1.ozf'
    OS
+   System
 export
    portPlayer:StartPlayer
 define
@@ -66,7 +67,7 @@ in
       end
    end
 
-   
+
    fun {Random N}
       {OS.rand} mod N + 1
    end
@@ -121,7 +122,7 @@ in
 	 if State.loadMine+1==Input.mine then
 	    {Record.adjoin State player(loadMine:0 numberMine:State.numberMine+1)}
 	 else
-	    KindItem=null
+	     KindItem=null
 	    {Record.adjoin State player(loadMine:State.loadMine+1)}
 	 end
       [] missile then
@@ -152,7 +153,7 @@ in
       if ListFire==nil then
 	 KindFire=null
 	 skip
-      end 
+      end
       local Fire in
 	 Fire={FindInList ListFire {Random {List.Length ListFire}}}
 	 case Fire of mine then
@@ -161,7 +162,7 @@ in
 	    else
 	       KindFire=mine({RandomPosition Input.map})
 	       {Record.ajdoin State player(listMine:KindFire|State.listMine numberMine:State.numberMine-1)}
-	    end	       
+	    end
 	 [] missile then
 	    if State.numberMissile>0 then
 	       KindFire=missile({RandomPosition Input.map})
@@ -199,6 +200,10 @@ in
       {Browse 1}
    end
 
+   fun{SayMove ID Direction}
+      {Browse 1}
+   end
+
    fun{SaySurface ID}
       {Browse 1}
    end
@@ -211,12 +216,56 @@ in
       {Browse 1}
    end
 
-   fun{SayMissileExplode ID Position ?Message}%simon 
-      {Browse 1}
+   fun{SayMissileExplode ID Position ?Message State}%simon
+
+       if Position.y==State.pos.y andthen Position.x==State.pos.x then
+          if (State.life < 3 )then
+              Message=sayDeath(State.id)
+              {Record.adjoin State player(life:0)}
+
+          else
+              Message=sayDamageTaken(State.id 2 State.life+2)
+              {Record.adjoin State player(life:State.life-2)}
+          end
+      else
+            if (({Number.abs Position.y-State.pos.y}+{Number.abs Position.x-State.pos.x})<2) then
+                if State.life < 2 then
+                     Message=sayDeath(State.id)
+                    {Record.adjoin State player(life:0)}
+
+                else
+                    Message=sayDamageTaken(State.id 1 State.life+1)
+                    {Record.adjoin State player(life:State.life-1)}
+
+                end
+            else
+                State
+            end
+       end
    end
 
-   fun{SayMineExplode ID Position ?Message}%simon 
-      {Browse 1}
+   fun{SayMineExplode ID Position ?Message State}%simon
+       if Position.y==State.pos.y andthen Position.x==State.pos.x then
+          if (State.life < 3 )then
+              {Record.adjoin State player(life:0)}
+              Message=sayDeath(State.id)
+          else
+              {Record.adjoin State player(life:State.life-2)}
+              Message=sayDamageTaken(State.id 2 State.life+2)
+          end
+      else
+            if (({Number.abs Position.y-State.pos.y}+{Number.abs Position.x-State.pos.x})<2) then
+                if State.life < 2 then
+                    {Record.adjoin State player(life:0)}
+                    Message=sayDeath(State.id)
+                else
+                    {Record.adjoin State player(life:State.life-1)}
+                    Message=sayDamageTaken(State.id 1 State.life+1)
+                end
+            else
+                null
+            end
+       end
    end
 
    fun{SayPassingDrone Drone State}
@@ -261,11 +310,11 @@ in
       {Browse 1}
    end
 
-   fun{SayDeath ID} %simon 
-      {Browse 1}
+   fun{SayDeath ID} %simon
+      {System.show deeeeaaaattthhh}%
    end
 
-   fun{SayDamageTaken ID Damage LifeLeft}
+   fun{SayDamageTaken ID Damage lifeLeft}
       {Browse 1}
    end
 
@@ -274,7 +323,8 @@ in
       Port
       PlayerState
    in
-      PlayerState = player(id(id:ID color:Color name:'Player') enemyPath:nil path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)
+      %immersed pour savoir si il est en surface ou pas
+      PlayerState = player(id(id:ID color:Color name:'Player') path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)
       {NewPort Stream Port}
       thread
 	 {TreatStream Stream PlayerState}
@@ -321,10 +371,7 @@ in
 	    Newstate={{FireMine ?Mine State} State}
 	    {TreatStream T Newstate}
 	 end
-      [] isDead(?Answer)|T then
-	 if State.life==0 then Answer=true
-	 else Answer=false
-	 end
+      [] isDead(?Answer)|T then {IsDead Answer 0}
 	 {TreatStream T State}
       [] sayMove(ID Direction)|T then
 	 {SayMove Direction State 0}
@@ -335,9 +382,17 @@ in
 	 {TreatStream T State}
       [] sayMinePlaced(ID)|T then {SayMinePlaced ID 0}
 	 {TreatStream T State}
-      [] sayMissileExplode(ID Position ?Message)|T then {SayMissileExplode ID Position Message 0} %simon
+      [] sayMissileExplode(ID Position ?Message)|T then %simon
+      local Newstate in
+         Newstate={SayMissileExplode ID Position ?Message State}
+      end
 	 {TreatStream T State}
-      [] sayMineExplode(ID Position ?Message)|T then {SayMineExplode ID Position Message 0} %simon 
+      [] sayMineExplode(ID Position ?Message)|T then %simon
+      local Newstate in
+          Newstate={{SayMineExplode ID Position ?Message State} State}
+      end
+   {TreatStream T State}
+      [] sayPassingDrone(Drone ?ID ?Answer)|T then {SayPassingDrone Drone ID Answer 0}
 	 {TreatStream T State}
       [] sayPassingDrone(Drone ?ID ?Answer)|T then
 	 ID=State.id
@@ -353,9 +408,8 @@ in
 	 {TreatStream T State}
       [] sayDeath(ID)|T then {SayDeath ID 0}
 	 {TreatStream T State}
-      [] sayDamageTaken(ID Damage LifeLeft)|T then {SayDamageTaken ID Damage LifeLeft 0}
+      [] sayDamageTaken(ID Damage lifeLeft)|T then {SayDamageTaken ID Damage lifeLeft 0}
 	 {TreatStream T State}
       end
    end
 end
-

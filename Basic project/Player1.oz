@@ -4,6 +4,7 @@ import
    Browser(browse:Browse)
    Player at 'Player1.ozf'
    OS
+   System
 export
    portPlayer:StartPlayer
 define
@@ -219,7 +220,7 @@ in
 
        if Position.y==State.pos.y andthen Position.x==State.pos.x then
           if (State.life < 3 )then
-              Message=SayDeath(State.id)
+              Message=sayDeath(State.id)
               {Record.adjoin State player(life:0)}
 
           else
@@ -229,7 +230,7 @@ in
       else
             if (({Number.abs Position.y-State.pos.y}+{Number.abs Position.x-State.pos.x})<2) then
                 if State.life < 2 then
-                    Message=SayDeath(State.id)
+                     Message=sayDeath(State.id)
                     {Record.adjoin State player(life:0)}
 
                 else
@@ -247,7 +248,7 @@ in
        if Position.y==State.pos.y andthen Position.x==State.pos.x then
           if (State.life < 3 )then
               {Record.adjoin State player(life:0)}
-              Message=SayDeath(State.id)
+              Message=sayDeath(State.id)
           else
               {Record.adjoin State player(life:State.life-2)}
               Message=sayDamageTaken(State.id 2 State.life+2)
@@ -256,10 +257,10 @@ in
             if (({Number.abs Position.y-State.pos.y}+{Number.abs Position.x-State.pos.x})<2) then
                 if State.life < 2 then
                     {Record.adjoin State player(life:0)}
-                    Message=SayDeath(State.id)
+                    Message=sayDeath(State.id)
                 else
                     {Record.adjoin State player(life:State.life-1)}
-                    sayDamageTaken(State.id 1 State.life+1)
+                    Message=sayDamageTaken(State.id 1 State.life+1)
                 end
             else
                 null
@@ -284,7 +285,7 @@ in
    end
 
    fun{SayDeath ID} %simon
-      {Browse 1}
+      {System.show deeeeaaaattthhh}%
    end
 
    fun{SayDamageTaken ID Damage lifeLeft}
