@@ -10,13 +10,10 @@ export
 define
    StartPlayer
    TreatStream
-   InitPosition
    Move
-   Dive
    ChargeItem
    FireItem
    FireMine
-   IsDead
    SayMove
    SaySurface
    SayCharge
@@ -122,7 +119,7 @@ in
 	 if State.loadMine+1==Input.mine then
 	    {Record.adjoin State player(loadMine:0 numberMine:State.numberMine+1)}
 	 else
-	     KindItem=null
+	    KindItem=null
 	    {Record.adjoin State player(loadMine:State.loadMine+1)}
 	 end
       [] missile then
@@ -189,14 +186,14 @@ in
    end
 
    fun{FireMine ?Mine State}
-      case State.listMine of nil then Mine=null
-      [] H|T then
-	 Mine=H
-	 {Record.adjoin State player(listMine:{RemoveFromList State.listMine H})}
+      if State.listMine==nil then Mine=null
+      else
+	 Mine=State.listMine.1
+	 {Record.adjoin State player(listMine:{RemoveFromList State.listMine State.listMine.1})}
       end
    end
 
-   fun{SayMove Direction State}
+   fun{SayMove ID Direction State}
       {Browse 1}
    end
 
@@ -218,54 +215,54 @@ in
 
    fun{SayMissileExplode ID Position ?Message State}%simon
 
-       if Position.y==State.pos.y andthen Position.x==State.pos.x then
-          if (State.life < 3 )then
-              Message=sayDeath(State.id)
-              {Record.adjoin State player(life:0)}
+      if Position.y==State.pos.y andthen Position.x==State.pos.x then
+	 if (State.life < 3 )then
+	    Message=sayDeath(State.id)
+	    {Record.adjoin State player(life:0)}
 
-          else
-              Message=sayDamageTaken(State.id 2 State.life+2)
-              {Record.adjoin State player(life:State.life-2)}
-          end
+	 else
+	    Message=sayDamageTaken(State.id 2 State.life+2)
+	    {Record.adjoin State player(life:State.life-2)}
+	 end
       else
-            if (({Number.abs Position.y-State.pos.y}+{Number.abs Position.x-State.pos.x})<2) then
-                if State.life < 2 then
-                     Message=sayDeath(State.id)
-                    {Record.adjoin State player(life:0)}
+	 if (({Number.abs Position.y-State.pos.y}+{Number.abs Position.x-State.pos.x})<2) then
+	    if State.life < 2 then
+	       Message=sayDeath(State.id)
+	       {Record.adjoin State player(life:0)}
 
-                else
-                    Message=sayDamageTaken(State.id 1 State.life+1)
-                    {Record.adjoin State player(life:State.life-1)}
+	    else
+	       Message=sayDamageTaken(State.id 1 State.life+1)
+	       {Record.adjoin State player(life:State.life-1)}
 
-                end
-            else
-                State
-            end
-       end
+	    end
+	 else
+	    State
+	 end
+      end
    end
 
    fun{SayMineExplode ID Position ?Message State}%simon
-       if Position.y==State.pos.y andthen Position.x==State.pos.x then
-          if (State.life < 3 )then
-              {Record.adjoin State player(life:0)}
-              Message=sayDeath(State.id)
-          else
-              {Record.adjoin State player(life:State.life-2)}
-              Message=sayDamageTaken(State.id 2 State.life+2)
-          end
+      if Position.y==State.pos.y andthen Position.x==State.pos.x then
+	 if (State.life < 3 )then
+	    {Record.adjoin State player(life:0)}
+	    Message=sayDeath(State.id)
+	 else
+	    {Record.adjoin State player(life:State.life-2)}
+	    Message=sayDamageTaken(State.id 2 State.life+2)
+	 end
       else
-            if (({Number.abs Position.y-State.pos.y}+{Number.abs Position.x-State.pos.x})<2) then
-                if State.life < 2 then
-                    {Record.adjoin State player(life:0)}
-                    Message=sayDeath(State.id)
-                else
-                    {Record.adjoin State player(life:State.life-1)}
-                    Message=sayDamageTaken(State.id 1 State.life+1)
-                end
-            else
-                null
-            end
-       end
+	 if (({Number.abs Position.y-State.pos.y}+{Number.abs Position.x-State.pos.x})<2) then
+	    if State.life < 2 then
+	       {Record.adjoin State player(life:0)}
+	       Message=sayDeath(State.id)
+	    else
+	       {Record.adjoin State player(life:State.life-1)}
+	       Message=sayDamageTaken(State.id 1 State.life+1)
+	    end
+	 else
+	    null
+	 end
+      end
    end
 
    fun{SayPassingDrone Drone State}
@@ -371,10 +368,13 @@ in
 	    Newstate={{FireMine ?Mine State} State}
 	    {TreatStream T Newstate}
 	 end
-      [] isDead(?Answer)|T then {IsDead Answer 0}
+      [] isDead(?Answer)|T then
+	 if State.life==0 then Answer=true
+	 else Answer=false
+	 end
 	 {TreatStream T State}
       [] sayMove(ID Direction)|T then
-	 {SayMove Direction State 0}
+	 {SayMove ID Direction State 0}
 	 {TreatStream T State}
       [] saySurface(ID)|T then {SaySurface ID 0}
 	 {TreatStream T State}
@@ -383,28 +383,26 @@ in
       [] sayMinePlaced(ID)|T then {SayMinePlaced ID 0}
 	 {TreatStream T State}
       [] sayMissileExplode(ID Position ?Message)|T then %simon
-      local Newstate in
-         Newstate={SayMissileExplode ID Position ?Message State}
-      end
-	 {TreatStream T State}
+	 local Newstate in
+	    Newstate={SayMissileExplode ID Position ?Message State}
+	    {TreatStream T Newstate}
+	 end
       [] sayMineExplode(ID Position ?Message)|T then %simon
-      local Newstate in
-          Newstate={{SayMineExplode ID Position ?Message State} State}
-      end
-   {TreatStream T State}
-      [] sayPassingDrone(Drone ?ID ?Answer)|T then {SayPassingDrone Drone ID Answer 0}
+	 local Newstate in
+	    Newstate={{SayMineExplode ID Position ?Message State} State}
+	    {TreatStream T Newstate}
+	 end
+      [] sayAnswerDrone(Drone ?ID ?Answer)|T then {SayAnswerDrone Drone ID Answer 0}
 	 {TreatStream T State}
       [] sayPassingDrone(Drone ?ID ?Answer)|T then
 	 ID=State.id
 	 Answer={SayPassingDrone Drone State}
 	 {TreatStream T State}
-      [] sayAnswerDrone(Drone ID Answer)|T then {SayAnswerDrone Drone ID Answer 0}
+      [] sayAnswerSonar(ID Answer)|T then {SayAnswerSonar ID Answer 0}
 	 {TreatStream T State}
       [] sayPassingSonar(?ID ?Answer)|T then
 	 ID=State.id
 	 Answer={SayPassingSonar State}
-	 {TreatStream T State}
-      [] sayAnswerSonar(ID Answer)|T then {SayAnswerSonar ID Answer 0}
 	 {TreatStream T State}
       [] sayDeath(ID)|T then {SayDeath ID 0}
 	 {TreatStream T State}
