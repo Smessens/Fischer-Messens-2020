@@ -65,12 +65,12 @@ in
       end
    end
 
-   %Je suppose qu'il n'existe aucune colonne avec que des 1
+   
    fun {Random N}
       {OS.rand} mod N + 1
    end
 
-
+   %Je suppose qu'il n'existe aucune colonne avec que des 1
    fun{RandomPosition M}
       local X Y in
 	 X={Random Input.nRow}
@@ -154,43 +154,44 @@ in
       end 
       local Fire in
 	 Fire={FindInList ListFire {Random {List.Length ListFire}}}
-	       case Fire of mine then
-		  if State.numberMine<1 then
-		     {FireItem ?KindFire {RemoveFromList ListFire mine} State}
-		  else
-		     KindFire=mine({RandomPosition Input.map})
-		     {Record.ajdoin State player(listMine:KindFire|State.listMine numberMine:State.numberMine-1)}
-		  end	       
-	       [] missile then
-		  if State.numberMissile>0 then
-		     KindFire=missile({RandomPosition Input.map})
-		     {Record.ajdoin State player(listMissile:KindFire|State.listMissile numberMissile:State.numberMissile-1)}
-		  else
-		     {FireItem ?KindFire {RemoveFromList ListFire missile} State}
-		  end
-	       [] drone then
-		  if State.numberDrone>0 then
-		     KindFire=drone(row:{Random Input.nrow})
-		     {Record.ajdoin State player(numberDrone:State.numberDrone-1)}
-		  else
-		     {FireItem ?KindFire {RemoveFromList ListFire drone} State}
-		  end
-	       [] sonar then
-		  if State.numberSonar>0 then
-		     KindFire=sonar
-		     {Record.ajdoin State player(numberSonar:State.numberSonar-1)}
-		  else
-		     {FireItem ?KindFire {RemoveFromList ListFire sonar} State}
-		  end
-	       end
+	 case Fire of mine then
+	    if State.numberMine<1 then
+	       {FireItem ?KindFire {RemoveFromList ListFire mine} State}
+	    else
+	       KindFire=mine({RandomPosition Input.map})
+	       {Record.ajdoin State player(listMine:KindFire|State.listMine numberMine:State.numberMine-1)}
+	    end	       
+	 [] missile then
+	    if State.numberMissile>0 then
+	       KindFire=missile({RandomPosition Input.map})
+	       {Record.ajdoin State player(listMissile:KindFire|State.listMissile numberMissile:State.numberMissile-1)}
+	    else
+	       {FireItem ?KindFire {RemoveFromList ListFire missile} State}
+	    end
+	 [] drone then
+	    if State.numberDrone>0 then
+	       KindFire=drone(row {Random Input.nrow})
+	       {Record.ajdoin State player(numberDrone:State.numberDrone-1)}
+	    else
+	       {FireItem ?KindFire {RemoveFromList ListFire drone} State}
+	    end
+	 [] sonar then
+	    if State.numberSonar>0 then
+	       KindFire=sonar
+	       {Record.ajdoin State player(numberSonar:State.numberSonar-1)}
+	    else
+	       {FireItem ?KindFire {RemoveFromList ListFire sonar} State}
+	    end
+	 end
       end
    end
-	       
-	       
-	       
 
-   fun{FireMine ?ID ?Mine}
-      {Browse 1}
+   fun{FireMine ?Mine State}
+      case State.listMine of nil then Mine=null
+      [] H|T then
+	 Mine=H
+	 {Record.adjoin State player(listMine:{RemoveFromList State.listMine H})}
+      end
    end
 
    fun{IsDead ?Answer}
@@ -213,11 +214,11 @@ in
       {Browse 1}
    end
 
-   fun{SayMissileExplode ID Position ?Message}
+   fun{SayMissileExplode ID Position ?Message}%simon 
       {Browse 1}
    end
 
-   fun{SayMineExplode ID Position ?Message}
+   fun{SayMineExplode ID Position ?Message}%simon 
       {Browse 1}
    end
 
@@ -237,7 +238,7 @@ in
       {Browse 1}
    end
 
-   fun{SayDeath ID}
+   fun{SayDeath ID} %simon 
       {Browse 1}
    end
 
@@ -251,7 +252,7 @@ in
       PlayerState
    in
       %immersed pour savoir si il est en surface ou pas
-      PlayerState = player(id(id:ID color:Color name:_) path:_ pos:_ immersed:_ listMine:_ loadMine:_ numberMine:_ listMissile:_ loadMissile:_ numberMissile:_ loadDrone:_ numberDrone:_ loadSonar:_ numberSonar:_)
+      PlayerState = player(id(id:ID color:Color name:'Player') path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)
       {NewPort Stream Port}
       thread
 	 {TreatStream Stream PlayerState}
@@ -291,8 +292,11 @@ in
 	    Newstate={{FireItem ?KindFire ListFire State} State}
 	    {TreatStream T Newstate}
 	 end
-      [] fireMine(?ID ?Mine)|T then {FireMine ID Mine 0}
-	 {TreatStream T State}
+      [] fireMine(?ID ?Mine)|T then
+	 local Newstate in
+	    Newstate={{FireMine ?Mine State} State}
+	    {TreatStream T Newstate}
+	 end
       [] isDead(?Answer)|T then {IsDead Answer 0}
 	 {TreatStream T State}
       [] sayMove(ID Direction)|T then {SayMove ID Direction 0}
@@ -303,9 +307,9 @@ in
 	 {TreatStream T State}
       [] sayMinePlaced(ID)|T then {SayMinePlaced ID 0}
 	 {TreatStream T State}
-      [] sayMissileExplode(ID Position ?Message)|T then {SayMissileExplode ID Position Message 0}
+      [] sayMissileExplode(ID Position ?Message)|T then {SayMissileExplode ID Position Message 0} %simon
 	 {TreatStream T State}
-      [] sayMineExplode(ID Position ?Message)|T then {SayMineExplode ID Position Message 0}
+      [] sayMineExplode(ID Position ?Message)|T then {SayMineExplode ID Position Message 0} %simon 
 	 {TreatStream T State}
       [] sayPassingDrone(Drone ?ID ?Answer)|T then {SayPassingDrone Drone ID Answer 0}
 	 {TreatStream T State}
