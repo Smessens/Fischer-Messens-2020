@@ -105,7 +105,7 @@ in
    end
 
    fun{SayMissileExplode ID Position ?Message}
-      {Browse 1}
+      if P
    end
 
    fun{SayMineExplode ID Position ?Message}

@@ -19,14 +19,59 @@ define
 	TestPlayer
 	LauchgameTurn
 	Playturn
+	ExplosionMine
+	ExplosionMissile
+
 
 in
+
+		%Deal with explosion and damage
+		proc {ExplosionMine PositionExp} %Attention pas de diff mine et missile
+				local MineTemp MessageMine1 MessageMine2 Death in
+				{Send  PlayerList.1.port sayMineExplode(PlayerList.1.id PositionExp MessageMine1)}
+				case MessageMine1
+					of nil then skip
+					[]sayDeath(ID) then Death=true
+					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.1.id LifeLeft)}
+					else skip
+				end
+
+				{Send  PlayerList.1.port sayMineExplode(PlayerList.2.id PositionExp MessageMine2)}
+				case MessageMine2
+					of nil then skip
+					[]sayDeath(?ID) then Death=true
+					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.2.id LifeLeft)}
+					else skip
+				end
+				end
+		end
+
+		%Deal with explosion and damage
+		proc {ExplosionMissile PositionExp} %Attention pas de diff mine et missile
+				local MineTemp MessageMine1 MessageMine2 Death in
+				{Send  PlayerList.1.port sayMissileExplode(PlayerList.1.id PositionExp MessageMine1)}
+				case MessageMine1
+					of nil then skip
+					[]sayDeath(ID) then Death=true
+					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.1.id LifeLeft)}
+					else skip
+				end
+
+				{Send  PlayerList.1.port sayMissileExplode(PlayerList.2.id PositionExp MessageMine2)}
+				case MessageMine2
+					of nil then skip
+					[]sayDeath(?ID) then Death=true
+					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.2.id LifeLeft)}
+					else skip
+				end
+				end
+		end
+
+		%play turn by turn
 		fun {Playturn Player Item Round}
 
-					{Delay 500}    %juste pour less tests c'est plus visible a virer
+					{Delay 100}    %juste pour less tests c'est plus visible a virer
 					if Round==0 then {Send Player.port dive()} end %required by consigne
-
-					%if Round==10 then 	{Send GUI_port surface(Player.id)} end %pour test a viere
 
 					local DirTemp PosTemp ItemTemp FireTemp MineTemp MessageDeath MessageMine Death in
 							%Player choose to move
@@ -44,34 +89,25 @@ in
 								%allow player to fire Item
 								{Send Player.port fireItem(Player.id FireTemp)}
 								{Wait FireTemp}
-								if FireTemp \= null then
-																		if FireTemp == mine then {Send (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayMinePlaced(Player.id)}
-																														 		{System.show mIIIIIIIIIIINNNNNNNNNZZZZZZZZ}
-																														 		{Delay 10000}
-																														 		{Send GUI_port putMine(Player.id PosTemp)}
-																															end
-																		if FireTemp == missile then {System.show mISSSSSSSSIIIIIILLLLLEEE}
-																																{Delay 10000}
-																														end
+								case FireTemp
+								     of missile(pt(x:_ y:_)) then {ExplosionMissile FireTemp.1}
+										 [] mine(pt(x:_ y:_))    then {Send GUI_port putMine(Player.id FireTemp.1)}
+										 []	drone(_ _ )		       then {System.show droooooonnne}
+										 [] sonar 							 then {System.show sonaaeeeeeer}
+										 else {System.show rieeeennn}
 								end
+
 								{System.show FireTemp}
-								{System.show yoooooooooooooooooooooooooooo}
+								{System.show endfireitemmmmmmmmmmmmmmmmm}
 
-%S'occuper des missile
+
 								%allow player to detonate mine
-
 								{Send Player.port fireMine(Player.id MineTemp)}
 								{Wait MineTemp}
 								if MineTemp \= null then
-																				{Send  Player.port sayMineExplode(Player.id MineTemp MessageMine)}
-																				case MessageMine % implémenté le suicide
-																					of nil then skip
-																					[]sayDeath(?ID) then Death=true
-																					[]sayDamageTaken(?ID ?Damage ?LifeLeft) then {Send GUI_port lifeUpdate(ID LifeLeft)}
-																					else skip
+																				{ExplosionMissile MineTemp}
+																				{Send GUI_port removeMine(Player.id MineTemp)}
 																				end
-																				{Send GUI_port removeMine(Player.id MineTemp) }
-																				end %add broadcast
 
 
 							else
@@ -88,15 +124,15 @@ in
 
 
 		%Fonction utile pour le jeux
-		fun {LauchgameTurn Round}
+		fun {LauchgameTurn Round} %rajouter sayDeath au cas ou il est mort pendant le tour de l'autre
 				{System.show round}
 				{System.show Round}
 				if ({Playturn PlayerList.1 null Round}) then
-																										{Send GUI_port removePlayer(1)}
+																										{Send GUI_port removePlayer(ID1)}
 																										win2
 				else
 					if {Playturn PlayerList.2 null Round} then
-																										{Send GUI_port removePlayer(2)}
+																										{Send GUI_port removePlayer(ID2)}
 																										win1
 					else
 						if Round<4000 then  {LauchgameTurn Round+1}
