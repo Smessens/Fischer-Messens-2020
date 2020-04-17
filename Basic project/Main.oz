@@ -81,35 +81,36 @@ in
 							{Send GUI_port movePlayer(Player.id PosTemp)}
 						  if PosTemp \= surface then {Send (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayMove(Player.id DirTemp)}  %add broadcast
 
-								%allow player to charge FireItem
-								{Send Player.port chargeItem(Player.id ItemTemp)}
-								{Wait ItemTemp}
-								if ItemTemp \= null then {Send (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayCharge(Player.id ItemTemp)} end %add broadcast
+									%allow player to charge FireItem
+									{Send Player.port chargeItem(Player.id ItemTemp)}
+									{Wait ItemTemp}
+									if ItemTemp \= null then {Send (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayCharge(Player.id ItemTemp)} end %add broadcast
 
-								%allow player to fire Item
-								{Send Player.port fireItem(Player.id FireTemp)}
-								{Wait FireTemp}
-								case FireTemp
-								     of missile(pt(x:_ y:_)) then {ExplosionMissile FireTemp.1}
-										 [] mine(pt(x:_ y:_))    then {Send GUI_port putMine(Player.id FireTemp.1)}
-										 []	drone(_ _ )		       then {System.show droooooonnne}
-										 [] sonar 							 then {System.show sonaaeeeeeer}
-										 else {System.show rieeeennn}
-								end
+										%allow player to fire Item
+										{Send Player.port fireItem(Player.id FireTemp)}
+										{Wait FireTemp}
+										case FireTemp
+										     of missile(pt(x:_ y:_)) then {ExplosionMissile FireTemp.1}
+												 [] mine(pt(x:_ y:_))    then {Send GUI_port putMine(Player.id FireTemp.1)}
+												 []	drone(_ _ )		       then {System.show droooooonnne}
+												 [] sonar 							 then {System.show sonaaeeeeeer}
+												 else {System.show rieeeennn}
+										end
 
-								{System.show FireTemp}
-								{System.show endfireitemmmmmmmmmmmmmmmmm}
+										%if Death == true then
 
-
-								%allow player to detonate mine
-								{Send Player.port fireMine(Player.id MineTemp)}
-								{Wait MineTemp}
-								if MineTemp \= null then
-																				{ExplosionMissile MineTemp}
-																				{Send GUI_port removeMine(Player.id MineTemp)}
-																				end
+										{System.show FireTemp}
+										{System.show endfireitemmmmmmmmmmmmmmmmm}
 
 
+										%allow player to detonate mine
+										{Send Player.port fireMine(Player.id MineTemp)}
+										{Wait MineTemp}
+										if MineTemp \= null then
+																						{ExplosionMissile MineTemp}
+																						{Send GUI_port removeMine(Player.id MineTemp)}
+																						end
+								%	end
 							else
 								{Send (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  saySurface(Player.id)}
 								{Send Player.port dive()}

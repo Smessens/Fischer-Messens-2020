@@ -2,7 +2,7 @@ functor
 import
    Input at 'Input.ozf'
    Browser(browse:Browse)
-   Player at 'Player1.ozf'
+   Player at 'Player.ozf'
    OS
    System
 export
