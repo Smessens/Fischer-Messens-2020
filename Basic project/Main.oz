@@ -72,18 +72,22 @@ in
 
 					{Delay 100}    %juste pour less tests c'est plus visible a virer
 					if Round==0 then {Send Player.port dive()} end %required by consigne
-
+					{System.show Player.id}
 					local DirTemp PosTemp ItemTemp FireTemp MineTemp MessageDeath MessageMine Death in
 							%Player choose to move
 							{Send Player.port move(Player.id PosTemp DirTemp)}
-							{Wait DirTemp}
 							{Wait PosTemp}
+							{System.show waiting_psotemp}
+							{Wait DirTemp}
 							{Send GUI_port movePlayer(Player.id PosTemp)}
-						  if PosTemp \= surface then {Send (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayMove(Player.id DirTemp)}  %add broadcast
+							{System.show move_done}
+
+						  if PosTemp \= surface then {Send (if Player.id==1 then PlayerList.1.port else PlayerList.2.port end)  sayMove(Player.id DirTemp)}  %add broadcast
 
 									%allow player to charge FireItem
 									{Send Player.port chargeItem(Player.id ItemTemp)}
 									{Wait ItemTemp}
+									{System.show chargeitem}
 									if ItemTemp \= null then {Send (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayCharge(Player.id ItemTemp)} end %add broadcast
 
 										%allow player to fire Item
@@ -148,11 +152,12 @@ in
 	GUI_port = {GUI.portWindow}
 	{Send GUI_port buildWindow}
 
+	{System.show playerlisst}
+
 	ID1=id(id:1 color:red name:basicAI)
-	ID2=id(id:2 color:blue name:basicAI)
+	ID2=id(id:2 color:blue name:fishy)
 	PlayerList=player(port:{PlayerManager.playerGenerator player1 red 1} id:ID1 color:red kind:player1 item:_)|player(port:{PlayerManager.playerGenerator player2 blue 2} id:ID2 color:blue kind:player2 item_)
 
-	{System.show gui}
 	{System.show player1_Info}
 
 	{Send PlayerList.1.port initPosition(ID1 Position1)}
@@ -163,8 +168,10 @@ in
 
 
 	{System.show player2_Info}
-	{Send PlayerList.2.port initPosition(ID2 Position2)}
+	{Send PlayerList.2.port initPosition(ID2 Position2)} %id.id pas la meme qu'avec le truc du prof
+	{System.show player2_dooone}
 	{Wait Position2}
+	{System.show player2_dooone}
 	{Send GUI_port initPlayer(ID2 Position2)}
 
 

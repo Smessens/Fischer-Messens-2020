@@ -95,8 +95,9 @@ in
       end
    end
 
-   fun{Move ?Position State}
-      local PotDirection Direction CandPos in
+   fun{Move ?Position ?Direction State}
+      {System.show mooove}
+      local PotDirection CandPos in
 	 PotDirection=[east south west north surface]
 	 Direction={FindInList PotDirection {Random 5}}
 	 case Direction of east then CandPos=pt(x:State.pos.x y:State.pos.y+1)
@@ -107,43 +108,65 @@ in
 	    Position=State.pos
 	    {Record.adjoin State player(immersed:false path:Position|nil)}
 	 end
+
 	 if({IsValidPath State.path CandPos}==true) then
 	    Position=CandPos
 	    {Record.adjoin State player(pos:Position path:Position|State.path)}
-	 end
+  % else     !!!!!! implementer réaction si path pass valid
+  %    {Move ?Position ?Direction State}
+   end
       end
    end
 
    fun{ChargeItem ?KindItem State}
-      case KindItem of mine then
-	 if State.loadMine+1==Input.mine then
-	    {Record.adjoin State player(loadMine:0 numberMine:State.numberMine+1)}
-	 else
-	    KindItem=null
-	    {Record.adjoin State player(loadMine:State.loadMine+1)}
-	 end
-      [] missile then
-	 if State.loadMissile+1==Input.missile then
-	    {Record.adjoin State player(loadMissile:0 numberMissile:State.numberMissile+1)}
-	 else
-	    KindItem=null
-	    {Record.adjoin State player(loadMissile:State.loadMissile+1)}
-	 end
-      [] drone then
-	 if State.loadDrone+1==Input.drone then
-	    {Record.adjoin State player(loadDrone:0 numberDrone:State.numberDrone+1)}
-	 else
-	    KindItem=null
-	    {Record.adjoin State player(loadDrone:State.loadDrone+1)}
-	 end
-      [] sonar then
-	 if State.loadSonar+1==Input.sonar then
-	    {Record.adjoin State player(loadSonar:0 numberSonar:State.numberSonar+1)}
-	 else
-	    KindItem=null
-	    {Record.adjoin State player(loadSonar:State.loadSonar+1)}
-	 end
-      end
+   {System.show chargeitem}
+
+
+   local PosItem TempItem in
+     PosItem=[mine missile drone sonar]
+     TempItem={FindInList PosItem {Random 4}}
+     {System.show TempItem}
+     {System.show tempitem}
+
+
+        case TempItem of mine then
+                	 if State.loadMine+1==Input.mine then
+                      KindItem=null
+                	    {Record.adjoin State player(loadMine:0 numberMine:State.numberMine+1)}
+                	 else
+                	    KindItem=mine
+                	    {Record.adjoin State player(loadMine:State.loadMine+1)}
+                	 end
+
+                [] missile then
+                	 if State.loadMissile+1==Input.missile then
+                      KindItem=null
+                	    {Record.adjoin State player(loadMissile:0 numberMissile:State.numberMissile+1)}
+                	 else
+                	    KindItem=missile
+                	    {Record.adjoin State player(loadMissile:State.loadMissile+1)}
+                	 end
+
+                [] drone then
+                	 if State.loadDrone+1==Input.drone then
+                      KindItem=null
+                	    {Record.adjoin State player(loadDrone:0 numberDrone:State.numberDrone+1)}
+                	 else
+                	    KindItem=drone
+                	    {Record.adjoin State player(loadDrone:State.loadDrone+1)}
+                	 end
+
+                [] sonar then
+                	 if State.loadSonar+1==Input.sonar then
+                      KindItem=null
+                	    {Record.adjoin State player(loadSonar:0 numberSonar:State.numberSonar+1)}
+                	 else
+                	    KindItem=sonar
+                	    {Record.adjoin State player(loadSonar:State.loadSonar+1)}
+
+          	 end
+        end
+     end
    end
 
    fun{FireItem ?KindFire ListFire State}
@@ -193,12 +216,10 @@ in
       end
    end
 
-   fun{SayMove ID Direction State}
-      {Browse 1}
-   end
 
-   fun{SayMove ID Direction}
-      {Browse 1}
+   fun{SayMove ID Direction State}
+      {System.show saymove}
+      State
    end
 
    fun{SaySurface ID}
@@ -321,93 +342,126 @@ in
       PlayerState
    in
       %immersed pour savoir si il est en surface ou pas
-      PlayerState = player(id(id:ID color:Color name:'Player') path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)
+      PlayerState = player(id:id(id:ID color:Color name:fishy) path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)
       {NewPort Stream Port}
       thread
+      {System.show start_play}
 	 {TreatStream Stream PlayerState}
       end
       Port
    end
 
    proc {TreatStream Stream State}
+
+
       case Stream of nil then skip
       [] initPosition(?ID ?Position)|T then
-	 ID=State.id
-	 Position={RandomPosition Input.map}
-	 local Newstate in
-	    Newstate={Record.adjoin State player(pos:Position path:Position|nil)}
-	    {TreatStream T Newstate}
-	 end
-      [] move(?ID ?Position ?Direction)|T then
-	 ID=State.id
-	 local Newstate in
-	    Newstate={{Move Position State} State}
-	    {TreatStream T Newstate}
-	 end
+        	 ID=State.id
+        	 Position={RandomPosition Input.map}
+        	 local Newstate in
+        	    Newstate={Record.adjoin State player(pos:Position path:Position|nil)}
+        	    {TreatStream T Newstate}
+        	 end
+
+      [] move(ID ?Position ?Direction)|T then
+        	 ID=State.id
+        	 local Newstate in
+              {System.show newState}
+        	    Newstate={Move ?Position ?Direction State}
+              {System.show mooove}
+        	    {TreatStream T Newstate}
+    	     end
+
       [] dive|T then
-	 local Newstate in
-	    Newstate={Record.adjoin State player(immersed:true)}
-	    {TreatStream T Newstate}
-	 end
+        	 local Newstate in
+        	    Newstate={Record.adjoin State player(immersed:true)}
+        	    {TreatStream T Newstate}
+        	 end
+
       [] chargeItem(?ID ?KindItem)|T then
-	 ID=State.id
-	 local Newstate in
-	    Newstate={{ChargeItem ?KindItem State} State}
-	    {TreatStream T Newstate}
-	 end
+        	 ID=State.id % why ? a virer?
+        	 local Newstate in
+        	    Newstate={ChargeItem ?KindItem State}
+        	    {TreatStream T Newstate}
+        	 end
+
       [] fireItem(?ID ?KindFire)|T then
-	 ID=State.id
-	 local Newstate ListFire in
-	    ListFire=[mine missile drone sonar]
-	    Newstate={{FireItem ?KindFire ListFire State} State}
-	    {TreatStream T Newstate}
-	 end
+        	 ID=State.id
+        	 local Newstate ListFire in
+        	    ListFire=[mine missile drone sonar]
+        	    Newstate={{FireItem ?KindFire ListFire State} State}
+        	    {TreatStream T Newstate}
+        	 end
+
       [] fireMine(?ID ?Mine)|T then
-	 ID=State.id
-	 local Newstate in
-	    Newstate={{FireMine ?Mine State} State}
-	    {TreatStream T Newstate}
-	 end
+        	 ID=State.id
+        	 local Newstate in
+        	    Newstate={{FireMine ?Mine State} State}
+        	    {TreatStream T Newstate}
+        	 end
+
       [] isDead(?Answer)|T then
-	 if State.life==0 then Answer=true
-	 else Answer=false
-	 end
-	 {TreatStream T State}
+        	 if State.life==0 then Answer=true
+        	 else Answer=false
+        	 end
+        	 {TreatStream T State}
+
+
+
       [] sayMove(ID Direction)|T then
-	 {SayMove ID Direction State 0}
-	 {TreatStream T State}
+          local Newstate in
+            Newstate={SayMove ID Direction State}
+             {System.show saymooove_done}
+            {TreatStream T Newstate}
+          end
+
       [] saySurface(ID)|T then {SaySurface ID 0}
-	 {TreatStream T State}
+      	   {TreatStream T State}
+
       [] sayCharge(ID KindItem)|T then {SayCharge ID KindItem 0}
-	 {TreatStream T State}
+      	   {TreatStream T State}
+
       [] sayMinePlaced(ID)|T then {SayMinePlaced ID 0}
-	 {TreatStream T State}
+      	   {TreatStream T State}
+
       [] sayMissileExplode(ID Position ?Message)|T then %simon
-	 local Newstate in
-	    Newstate={SayMissileExplode ID Position ?Message State}
-	    {TreatStream T Newstate}
-	 end
+        	 local Newstate in
+        	    Newstate={SayMissileExplode ID Position ?Message State}
+        	    {TreatStream T Newstate}
+        	 end
+
       [] sayMineExplode(ID Position ?Message)|T then %simon
-	 local Newstate in
-	    Newstate={{SayMineExplode ID Position ?Message State} State}
-	    {TreatStream T Newstate}
-	 end
+        	 local Newstate in
+        	    Newstate={{SayMineExplode ID Position ?Message State} State}
+        	    {TreatStream T Newstate}
+        	 end
+
       [] sayAnswerDrone(Drone ?ID ?Answer)|T then {SayAnswerDrone Drone ID Answer 0}
-	 {TreatStream T State}
+	         {TreatStream T State}
+
       [] sayPassingDrone(Drone ?ID ?Answer)|T then
-	 ID=State.id
-	 Answer={SayPassingDrone Drone State}
-	 {TreatStream T State}
+        	 ID=State.id
+        	 Answer={SayPassingDrone Drone State}
+        	 {TreatStream T State}
+
       [] sayAnswerSonar(ID Answer)|T then {SayAnswerSonar ID Answer 0}
-	 {TreatStream T State}
+	         {TreatStream T State}
+
       [] sayPassingSonar(?ID ?Answer)|T then
-	 ID=State.id
-	 Answer={SayPassingSonar State}
-	 {TreatStream T State}
+        	 ID=State.id
+        	 Answer={SayPassingSonar State}
+        	 {TreatStream T State}
+
       [] sayDeath(ID)|T then {SayDeath ID 0}
-	 {TreatStream T State}
+	         {TreatStream T State}
+
       [] sayDamageTaken(ID Damage lifeLeft)|T then {SayDamageTaken ID Damage lifeLeft 0}
-	 {TreatStream T State}
+	         {TreatStream T State}
+
+      else
+        {System.show Stream}
+
       end
    end
 end
+%
