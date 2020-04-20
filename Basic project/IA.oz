@@ -88,7 +88,7 @@ in
       end
    end
 
-   fun{RemoveDrone Li Xi N}
+   fun{RemoveDrone Li Xi N} %testée et approuvée 
       local Point X Y in 
 	 if N==1 then %True et X 
 	    case Li of nil then nil
@@ -156,17 +156,20 @@ in
       end
    end
 
-   fun{RemoveSonar L Xs Ys}
-      local RemoveSonar2 X Y Point in
+   %enlève les points qui n'ont ni X ni Y en commun avec sonar
+   fun{RemoveSonar L Xs Ys} %testée et approuvée 
+      local X Y Point in
 	 case L of nil then nil
 	 [] H|T then
 	    X=H.x
 	    Y=H.y
 	    Point=pt(x:X y:Y)
-	    if X==Xs andthen Y=Ys then
-	       {RemoveSonar T Xs Ys}
-	    else
+	    if X==Xs then
 	       Point|{RemoveSonar T Xs Ys}
+	    elseif Y==Ys then
+	       Point|{RemoveSonar T Xs Ys}
+	    else
+	       {RemoveSonar T Xs Ys}
 	    end
 	 end
       end
