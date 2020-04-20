@@ -105,12 +105,15 @@ in
 
 										{System.show FireTemp}
 										{System.show endfireitemmmmmmmmmmmmmmmmm}
+										
 
 
 										%allow player to detonate mine
 										{Send Player.port fireMine(Player.id MineTemp)}
 										{Wait MineTemp}
+										{System.show detonateminem}
 										if MineTemp \= null then
+																						{System.show explosion_mine}
 																						{ExplosionMissile MineTemp}
 																						{Send GUI_port removeMine(Player.id MineTemp)}
 																						end
@@ -121,8 +124,13 @@ in
 								{Send GUI_port surface(Player.id)}
 
 							end % si en surface passe son tour
+							{System.show premesssagedeath}
 							{Send Player.port isDead(MessageDeath)}
+							{System.show ppostmesssagedeath}
+
 							{Wait MessageDeath}
+							{System.show MessageDeath}
+
 							MessageDeath
 					end
 		end

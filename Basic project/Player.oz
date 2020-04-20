@@ -35,6 +35,9 @@ define
    RandomPosition
    FindInList
    RemoveFromList
+   ListPosDir
+   GetNewPos
+   ValidItem
 in
 
    fun{IsIsland L X Y} %testé et approuvé
@@ -95,26 +98,55 @@ in
       end
    end
 
-   fun{Move ?Position ?Direction State}
-      {System.show mooove}
-      local PotDirection CandPos in
-	 PotDirection=[east south west north surface]
-	 Direction={FindInList PotDirection {Random 5}}
-	 case Direction of east then CandPos=pt(x:State.pos.x y:State.pos.y+1)
-	 [] south then CandPos=pt(x:State.pos.x+1 y:State.pos.y)
-	 [] west then CandPos=pt(x:State.pos.x y:State.pos.y-1)
-	 [] north then CandPos=pt(x:State.pos.x-1 y:State.pos.y)
-	 [] surface then
-	    Position=State.pos
-	    {Record.adjoin State player(immersed:false path:Position|nil)}
-	 end
 
-	 if({IsValidPath State.path CandPos}==true) then
-	    Position=CandPos
-	    {Record.adjoin State player(pos:Position path:Position|State.path)}
-  % else     !!!!!! implementer réaction si path pass valid
-  %    {Move ?Position ?Direction State}
+   %deal with false path also perfect place for intelligence while move is logisstic
+   fun {GetNewPos State}
+
+      local CandPos CandDir ListPosDir in
+             % pick at random a path
+             CandDir={FindInList [east south west north surface] {Random 5}}
+             {System.show newcandir}
+             {System.show CandDir}
+
+             case CandDir of
+                    east then        CandPos=pt(x:State.pos.x y:State.pos.y+1)
+                 [] south then       CandPos=pt(x:State.pos.x+1 y:State.pos.y)
+                 [] west then        CandPos=pt(x:State.pos.x y:State.pos.y-1)
+                 [] north then       CandPos=pt(x:State.pos.x-1 y:State.pos.y)
+                 [] surface then     CandPos=State.pos
+            end
+
+            %check if pos is valid
+            if ({IsValidPath State.path CandPos}==true) then       %isvalid surface bug?
+                        ListPosDir=CandPos|CandDir
+            else
+                if CandDir == surface then %isvalid surface bug?
+                     ListPosDir=CandPos|CandDir
+                else
+                        {System.show non_valid}
+                        {GetNewPos State}
+                end
+            end
+        end
    end
+
+
+   fun{Move ?Position ?Direction State}
+      {System.show newmove}
+
+      local  ListPosDir  in
+
+          ListPosDir =  {GetNewPos State}
+          Position=ListPosDir.1
+          Direction=ListPosDir.2
+
+          if ListPosDir.2 == surface then  %deal with diving
+                  {Record.adjoin State player(immersed:false path:Position|nil)}
+          else %no dive
+                  {Record.adjoin State player(pos:Position path:Position|State.path)}
+          end
+
+
       end
    end
 
@@ -169,50 +201,96 @@ in
      end
    end
 
-   fun{FireItem ?KindFire ListFire State}
-      if ListFire==nil then
-	 KindFire=null
-	 skip
+   %choisis quelle item a launch , coder IA ici et fireItem fait la logistique
+   fun {ValidItem ListFire State}
+         {System.show  validitem}
+
+
+          if ListFire==nil then nil
+          else
+          {System.show  ListFire}
+          {System.show  ListFire.1}
+
+                 case ListFire.1 of mine then
+                                  if State.numberMine>0 then
+                                     mine|{ValidItem ListFire.2 State}
+                                  else
+                                     {ValidItem ListFire.2 State}
+                                  end
+
+                     [] missile then
+                                if State.numberMissile>0 then
+                                    missile|{ValidItem ListFire.2 State}
+                                 else
+                                    {ValidItem ListFire.2 State}
+                                 end
+
+                     [] drone then
+                                if State.numberDrone>0 then
+                                    drone|{ValidItem ListFire.2 State}
+                                 else
+                                    {ValidItem ListFire.2 State}
+                                 end
+
+                     [] sonar then
+                                if State.numberSonar>0 then
+                                    sonar|{ValidItem ListFire.2 State}
+
+                                else
+                                    {ValidItem ListFire.2 State}
+                                end
+
+        				    else       rien|nil
+                 end
+          end
+   end
+
+   fun{FireItem ?KindFire State} % Listfire étrange? version smart buggé donc remplacé par tout con , peut etre trouvée au commit updateplayer du 20/4
+        {System.show  fireitem}
+
+      local Fire FireList in
+
+
+  	    Fire={ValidItem [mine missile drone sonar rien]  State}.1
+          {System.show  fireList}
+
+        	 case Fire of mine then
+                	       KindFire=mine(State.pos)
+                	       {Record.adjoin State player(listMine:KindFire|State.listMine numberMine:State.numberMine-1)}
+
+        	 [] missile then
+                	       KindFire=missile({RandomPosition Input.map})
+                	       {Record.adjoin State player(numberMissile:State.numberMissile-1)} %enlevé list missile
+
+        	 [] drone then
+                	       KindFire=drone(1:row 2:{Random 8}) % nrow bugged? remplaced by 8 for the time being
+                	       {Record.adjoin State player(numberDrone:State.numberDrone-1)}
+
+        	 [] sonar then
+                	       KindFire=sonar
+                	       {Record.adjoin State player(numberSonar:State.numberSonar-1)}
+
+           else
+                      KindFire=null
+                      State
+
+
+        	 end
       end
-      local Fire in
-	 Fire={FindInList ListFire {Random {List.Length ListFire}}}
-	 case Fire of mine then
-	    if State.numberMine<1 then
-	       {FireItem ?KindFire {RemoveFromList ListFire mine} State}
-	    else
-	       KindFire=mine({RandomPosition Input.map})
-	       {Record.ajdoin State player(listMine:KindFire|State.listMine numberMine:State.numberMine-1)}
-	    end
-	 [] missile then
-	    if State.numberMissile>0 then
-	       KindFire=missile({RandomPosition Input.map})
-	       {Record.ajdoin State player(listMissile:KindFire|State.listMissile numberMissile:State.numberMissile-1)}
-	    else
-	       {FireItem ?KindFire {RemoveFromList ListFire missile} State}
-	    end
-	 [] drone then
-	    if State.numberDrone>0 then
-	       KindFire=drone(row {Random Input.nrow})
-	       {Record.ajdoin State player(numberDrone:State.numberDrone-1)}
-	    else
-	       {FireItem ?KindFire {RemoveFromList ListFire drone} State}
-	    end
-	 [] sonar then
-	    if State.numberSonar>0 then
-	       KindFire=sonar
-	       {Record.ajdoin State player(numberSonar:State.numberSonar-1)}
-	    else
-	       {FireItem ?KindFire {RemoveFromList ListFire sonar} State}
-	    end
-	 end
-      end
+
    end
 
    fun{FireMine ?Mine State}
-      if State.listMine==nil then Mine=null
+     {System.show firemine}
+     {System.show State.listMine}
+
+      if State.listMine==nil then
+              Mine=null
+              State
       else
-	 Mine=State.listMine.1
-	 {Record.adjoin State player(listMine:{RemoveFromList State.listMine State.listMine.1})}
+              {System.show fireMine2}
+              Mine=State.listMine.1.1 %first object first argument (which is position)
+	            {Record.adjoin State player(listMine:{RemoveFromList State.listMine State.listMine.1})}
       end
    end
 
@@ -222,16 +300,16 @@ in
       State
    end
 
-   fun{SaySurface ID}
-      {Browse 1}
+   proc {SaySurface ID}
+        {System.show saySurface}
    end
 
-   fun{SayCharge ID KindItem}
-      {Browse 1}
+   proc{SayCharge ID KindItem} % proc pcq on retourne rien?
+      {System.show sayCharge}
    end
 
-   fun{SayMinePlaced ID}
-      {Browse 1}
+   proc{SayMinePlaced ID}% proc pcq on retourne rien?
+      {System.show sayMinePlaced}
    end
 
    fun{SayMissileExplode ID Position ?Message State}%simon
@@ -342,7 +420,7 @@ in
       PlayerState
    in
       %immersed pour savoir si il est en surface ou pas
-      PlayerState = player(id:id(id:ID color:Color name:fishy) path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)
+      PlayerState = player(id:id(id:ID color:Color name:fishy) path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)  % list misssile?
       {NewPort Stream Port}
       thread
       {System.show start_play}
@@ -352,6 +430,8 @@ in
    end
 
    proc {TreatStream Stream State}
+   {System.show state}
+   {System.show State}
 
 
       case Stream of nil then skip
@@ -366,7 +446,6 @@ in
       [] move(ID ?Position ?Direction)|T then
         	 ID=State.id
         	 local Newstate in
-              {System.show newState}
         	    Newstate={Move ?Position ?Direction State}
               {System.show mooove}
         	    {TreatStream T Newstate}
@@ -388,15 +467,17 @@ in
       [] fireItem(?ID ?KindFire)|T then
         	 ID=State.id
         	 local Newstate ListFire in
-        	    ListFire=[mine missile drone sonar]
-        	    Newstate={{FireItem ?KindFire ListFire State} State}
+        	    %ListFire=[mine missile drone sonar] %ListFire utile ?? pq pas la tapé directement ddans fireitem?
+        	    Newstate={FireItem ?KindFire  State}
         	    {TreatStream T Newstate}
         	 end
 
       [] fireMine(?ID ?Mine)|T then
+           {System.show fireMine}
         	 ID=State.id
         	 local Newstate in
-        	    Newstate={{FireMine ?Mine State} State}
+        	    Newstate={FireMine ?Mine State}
+              {System.show fireMine_done}
         	    {TreatStream T Newstate}
         	 end
 
@@ -415,13 +496,14 @@ in
             {TreatStream T Newstate}
           end
 
-      [] saySurface(ID)|T then {SaySurface ID 0}
+      [] saySurface(ID)|T then {SaySurface ID}
       	   {TreatStream T State}
 
-      [] sayCharge(ID KindItem)|T then {SayCharge ID KindItem 0}
+      [] sayCharge(ID KindItem)|T then {SayCharge ID KindItem}
+           {System.show sayCharge_done}
       	   {TreatStream T State}
 
-      [] sayMinePlaced(ID)|T then {SayMinePlaced ID 0}
+      [] sayMinePlaced(ID)|T then {SayMinePlaced ID}
       	   {TreatStream T State}
 
       [] sayMissileExplode(ID Position ?Message)|T then %simon
@@ -464,4 +546,4 @@ in
       end
    end
 end
-%
+% enlevé tout les {{...} State } ... smart?
