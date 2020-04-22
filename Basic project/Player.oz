@@ -500,14 +500,14 @@ in
    end
 
    fun{SayPassingDrone Drone State}
-      case Drone of drone(x Xp) then
-	 if State.pos.x==Xp then true
-	 else false
-	 end
-      [] drone(y Yp) then
-	 if State.pos.y==Yp then true
-	 else false
-	 end
+      case Drone of drone(row _) then
+          	 if State.pos.x==drone.2 then true
+          	 else false
+          	 end
+      [] drone(column _) then
+          	 if State.pos.y==drone.2 then true
+          	 else false
+          	 end
       else false
       end
    end
@@ -528,27 +528,31 @@ in
 
    fun{SayPassingSonar State}
       local R C in
-	 R={Random 2}
-	 if R==1 then
-	    C={Random Input.nColumn}
-	    if {IsIsland Input.Map State.pos.x C}==0 then
-	       pt(x:State.pos.x y:C)
-	    else
-	       {SayPassingSonar State}
-	    end
-	 else
-	    C={Random Input.nRow}
-	    if {IsIsland Input.Map C State.pos.y}==0 then
-	       pt(x:C y:State.pos.y)
-	    else
-	       {SayPassingSonar State}
-	    end
-	 end
+          	 R={Random 2}
+          	 if R==1 then
+          	    C={Random Input.nColumn}
+          	    if {IsIsland Input.Map State.pos.x C}==0 then
+          	       pt(x:State.pos.x y:C)
+          	    else
+          	       {SayPassingSonar State}
+          	    end
+          	 else
+          	    C={Random Input.nRow}
+          	    if {IsIsland Input.Map C State.pos.y}==0 then
+          	       pt(x:C y:State.pos.y)
+          	    else
+          	       {SayPassingSonar State}
+          	    end
+          	 end
       end
    end
 
-   fun{SayDeath ID} %simon
-      {System.show deeeeaaaattthhh}%
+   proc{SayAnswerSonar ID Answer} %a impl take in account results
+      {System.show sayAnswerSonar}
+   end
+
+   proc {SayDeath ID}% react to player death
+          {System.show saydeath}
    end
 
    fun{SayDamageTaken ID Damage lifeLeft}
@@ -650,10 +654,10 @@ in
 	 end
 
       [] sayMineExplode(ID Position ?Message)|T then %simon
-	 local Newstate in
-	    Newstate={{SayMineExplode ID Position ?Message State} State}
-	    {TreatStream T Newstate}
-	 end
+        	 local Newstate in
+        	    Newstate={SayMineExplode ID Position ?Message State}
+        	    {TreatStream T Newstate}
+        	 end
 
       [] sayAnswerDrone(Drone ?ID ?Answer)|T then
 	 local Newstate in
@@ -671,18 +675,19 @@ in
 	    {TreatStream T Newstate}
 	 end
       [] sayPassingSonar(?ID ?Answer)|T then
-	 ID=State.id
-	 Answer={SayPassingSonar State}
-	 {TreatStream T State}
+        	 ID=State.id
+        	 Answer={SayPassingSonar State} %quid? pas vraiment  / non?
+        	 {TreatStream T State}
 
-      [] sayDeath(ID)|T then {SayDeath ID 0}
-	 {TreatStream T State}
+      [] sayDeath(ID)|T then {SayDeath ID}
+	         {TreatStream T State}
 
       [] sayDamageTaken(ID Damage lifeLeft)|T then {SayDamageTaken ID Damage lifeLeft 0}
 	 {TreatStream T State}
 
       else
 	 {System.show Stream}
+
 
       end
    end

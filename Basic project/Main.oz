@@ -22,6 +22,7 @@ define
 	ExplosionMine
 	ExplosionMissile
 
+	%listMine				% A implémenter
 
 in
 
@@ -53,7 +54,7 @@ in
 				case MessageMine1
 					of nil then skip
 					[]sayDeath(ID) then Death=true
-					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.1.id LifeLeft)}
+					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.2.id LifeLeft)}
 					else skip
 				end
 
@@ -61,7 +62,7 @@ in
 				case MessageMine2
 					of nil then skip
 					[]sayDeath(?ID) then Death=true
-					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.2.id LifeLeft)}
+					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.1.id LifeLeft)}
 					else skip
 				end
 				end
@@ -73,7 +74,7 @@ in
 					{Delay 100}    %juste pour less tests c'est plus visible a virer
 					if Round==0 then {Send Player.port dive()} end %required by consigne
 					{System.show Player.id}
-					local DirTemp PosTemp ItemTemp FireTemp MineTemp MessageDeath MessageMine Death in
+					local DirTemp PosTemp ItemTemp FireTemp MineTemp MessageDeath IdTarget PosTarget IdTargetSon PosTargetSon MessageMine Death in
 							%Player choose to move
 							{Send Player.port move(Player.id PosTemp DirTemp)}
 							{Wait PosTemp}
@@ -81,6 +82,7 @@ in
 							{Wait DirTemp}
 							{Send GUI_port movePlayer(Player.id PosTemp)}
 							{System.show move_done}
+
 
 						  if PosTemp \= surface then {Send (if Player.id==1 then PlayerList.1.port else PlayerList.2.port end)  sayMove(Player.id DirTemp)}  %add broadcast
 
@@ -96,28 +98,30 @@ in
 										case FireTemp
 										     of missile(pt(x:_ y:_)) then {ExplosionMissile FireTemp.1}
 												 [] mine(pt(x:_ y:_))    then {Send GUI_port putMine(Player.id FireTemp.1)}
-												 []	drone(_ _ )		       then {System.show droooooonnne}
-												 [] sonar 							 then {System.show sonaaeeeeeer}
+												 []	drone(_ _ )		       then {Send  (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayPassingDrone(FireTemp IdTarget PosTarget)} 	{System.show drone} 	{System.show PosTarget} {Send  Player.port sayAnswerDrone(FireTemp IdTarget PosTarget)}%pssitargert answertarget
+												 [] sonar 							 then {Send  (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayPassingSonar(IdTargetSon PosTargetSon)}{Send  Player.port sayAnswerSonar(IdTargetSon PosTargetSon)}
 												 else {System.show rieeeennn}
 										end
 
-										%if Death == true then
 
 										{System.show FireTemp}
 										{System.show endfireitemmmmmmmmmmmmmmmmm}
-										
+										{Send Player.port isDead(Death)}
+										{Wait Death}
 
 
-										%allow player to detonate mine
-										{Send Player.port fireMine(Player.id MineTemp)}
-										{Wait MineTemp}
-										{System.show detonateminem}
-										if MineTemp \= null then
-																						{System.show explosion_mine}
-																						{ExplosionMissile MineTemp}
-																						{Send GUI_port removeMine(Player.id MineTemp)}
-																						end
-								%	end
+										if (Death \= true) then
+												%allow player to detonate mine
+												{System.show Player.id}
+												{Send Player.port fireMine(Player.id MineTemp)}
+												{Wait MineTemp}
+												{System.show detonateminem}
+												if MineTemp \= null then
+																								{System.show explosion_mine}
+																								{ExplosionMissile MineTemp}
+																								{Send GUI_port removeMine(Player.id MineTemp)}
+																								end
+				  					end
 							else
 								{Send (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  saySurface(Player.id)}
 								{Send Player.port dive()}
@@ -187,4 +191,10 @@ in
 	{System.show done}
 	{Delay 3000}%time to load GUI
 	{System.show {LauchgameTurn 0}}
+	{System.show 'Game will be terminated in 10 sec'}%
+  {Delay 10000}
+	{System.show 'Prank je sais pas comment quitter'}%
+	%{Exit GUI_port}
+
+	%quitter le programme
 end
