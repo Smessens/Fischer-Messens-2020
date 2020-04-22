@@ -11,9 +11,14 @@ define
 	List
 	Position1
 	Position2
+	Position3
 	ID1
 	ID2
+	ID3
+
+	Color
 	PlayerList
+	PortList
 	PlayerPositon
 	PlayRound
 	TestPlayer
@@ -21,13 +26,54 @@ define
 	Playturn
 	ExplosionMine
 	ExplosionMissile
+	InitiatePlayers
+	MakePortList
+
 
 	%listMine				% A implémenter
 
 in
 
+		fun {MakePortList List}
+				case List
+						of H|T then H.port|{MakePortList T}
+						[] H then H.port
+				end
+		end
+
+		%nom et couleur sont pas encore alz % cette fonction est dégueulasse
+		fun {Color Num}
+				if Num == 1 then red
+				else
+						if Num == 2 then blue
+						else green
+						end
+				end
+		end
+
+    %nom et couleur sont pas encore alz
+    proc {InitiatePlayers TempList AccId}
+					local PosTemp in
+					{System.show TempList}
+					{System.show tempList}
+
+							 case TempList
+									of H|T then
+													{Send H.port initPosition(id(id:AccId color:{Color AccId} name:basicAI) PosTemp)}
+													{Wait PosTemp}
+													{Send GUI_port initPlayer(id(id:AccId color:{Color AccId} name:basicAI) PosTemp)}
+													{InitiatePlayers T AccId+1}
+									[] H then
+													{Send H.port initPosition(id(id:AccId color:{Color AccId} name:basicAI) PosTemp)}
+													{Wait PosTemp}
+													{Send GUI_port initPlayer(id(id:AccId color:{Color AccId} name:basicAI) PosTemp)}
+								  else skip
+							 end
+					end
+		end
+
 		%Deal with explosion and damage
-		proc {ExplosionMine PositionExp} %Attention pas de diff mine et missile
+		proc {ExplosionMine PositionExp player} %Attention pas de diff mine et missile
 				local MineTemp MessageMine1 MessageMine2 Death in
 				{Send  PlayerList.1.port sayMineExplode(PlayerList.1.id PositionExp MessageMine1)}
 				case MessageMine1
@@ -71,11 +117,26 @@ in
 		%play turn by turn
 		fun {Playturn Player Item Round}
 
+					%placed func here so can use State
+					proc {ExplosionMissile PositionExp Target} %Attention pas de diff mine et missile
+							local MineTemp MessageMissile Death in
+								{Send  Target.port sayMissileExplode(Player.id PositionExp MessageMissile)}
+								{Wait MessageMissile}
+								case MessageMissile
+									of nil then skip
+									[]sayDeath(ID) then {Send GUI_port removePlayer(ID)}
+									[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(ID LifeLeft)} % send only to GUI , have to send to everybody
+									else skip
+								end
+							end
+					end
+
 					{Delay 100}    %juste pour less tests c'est plus visible a virer
 					if Round==0 then {Send Player.port dive()} end %required by consigne
 					{System.show Player.id}
 					local DirTemp PosTemp ItemTemp FireTemp MineTemp MessageDeath IdTarget PosTarget IdTargetSon PosTargetSon MessageMine Death in
 							%Player choose to move
+							{System.show waiting_psotemp}
 							{Send Player.port move(Player.id PosTemp DirTemp)}
 							{Wait PosTemp}
 							{System.show waiting_psotemp}
@@ -167,30 +228,22 @@ in
 	{System.show playerlisst}
 
 	ID1=id(id:1 color:red name:basicAI)
-	ID2=id(id:2 color:blue name:fishy)
-	PlayerList=player(port:{PlayerManager.playerGenerator player1 red 1} id:ID1 color:red kind:player1 item:_)|player(port:{PlayerManager.playerGenerator player2 blue 2} id:ID2 color:blue kind:player2 item_)
+	ID2=id(id:2 color:blue name:basicAI)
+	ID3=id(id:3 color:green name:basicAI)
+
+
+
+	PlayerList=player(port:{PlayerManager.playerGenerator player1 red 1} id:ID1 color:red kind:player1 item:_)|player(port:{PlayerManager.playerGenerator player2 blue 2} id:ID2 color:blue kind:player2 item_)|player(port:{PlayerManager.playerGenerator player3 green 3} id:ID3 color:green kind:player3 item:_)
+  PortList={MakePortList PlayerList}
 
 	{System.show player1_Info}
 
-	{Send PlayerList.1.port initPosition(ID1 Position1)}
-	{Wait Position1}
-	{System.show Position1.x}
-	{System.show Position1.y}
-	{Send GUI_port initPlayer(ID1 Position1)}
-
-
-	{System.show player2_Info}
-	{Send PlayerList.2.port initPosition(ID2 Position2)} %id.id pas la meme qu'avec le truc du prof
-	{System.show player2_dooone}
-	{Wait Position2}
-	{System.show player2_dooone}
-	{Send GUI_port initPlayer(ID2 Position2)}
-
+  {InitiatePlayers PlayerList 1}
 
 	%Lance le jeux
 	{System.show done}
 	{Delay 3000}%time to load GUI
-	{System.show {LauchgameTurn 0}}
+	%{System.show {LauchgameTurn 0}}
 	{System.show 'Game will be terminated in 10 sec'}%
   {Delay 10000}
 	{System.show 'Prank je sais pas comment quitter'}%
