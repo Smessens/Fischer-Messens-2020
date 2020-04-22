@@ -11,6 +11,10 @@ main:
 	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c main.oz
 	/Applications/Mozart2.app/Contents/Resources/bin/ozengine  main.ozf
 
+ia:
+	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c IA.oz
+	/Applications/Mozart2.app/Contents/Resources/bin/ozengine  IA.ozf
+
 
 test:
 	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c ish.oz
