@@ -7,6 +7,7 @@ import
 
 define
 
+	Maman
 	GUI_port
 	List
 	Position1
@@ -24,8 +25,6 @@ define
 	TestPlayer
 	LauchgameTurn
 	Playturn
-	ExplosionMine
-	ExplosionMissile
 	InitiatePlayers
 	MakePortList
 
@@ -36,7 +35,8 @@ in
 
 		fun {MakePortList List}
 				case List
-						of H|T then H.port|{MakePortList T}
+						of nil then nil
+						[] H|T then H.port|{MakePortList T}
 						[] H then H.port
 				end
 		end
@@ -58,7 +58,8 @@ in
 					{System.show tempList}
 
 							 case TempList
-									of H|T then
+									of nil then skip
+									[] H|T then
 													{Send H.port initPosition(id(id:AccId color:{Color AccId} name:basicAI) PosTemp)}
 													{Wait PosTemp}
 													{Send GUI_port initPlayer(id(id:AccId color:{Color AccId} name:basicAI) PosTemp)}
@@ -72,57 +73,31 @@ in
 					end
 		end
 
-		%Deal with explosion and damage
-		proc {ExplosionMine PositionExp player} %Attention pas de diff mine et missile
-				local MineTemp MessageMine1 MessageMine2 Death in
-				{Send  PlayerList.1.port sayMineExplode(PlayerList.1.id PositionExp MessageMine1)}
-				case MessageMine1
-					of nil then skip
-					[]sayDeath(ID) then Death=true
-					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.1.id LifeLeft)}
-					else skip
-				end
 
-				{Send  PlayerList.1.port sayMineExplode(PlayerList.2.id PositionExp MessageMine2)}
-				case MessageMine2
-					of nil then skip
-					[]sayDeath(?ID) then Death=true
-					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.2.id LifeLeft)}
-					else skip
-				end
-				end
-		end
-
-		%Deal with explosion and damage
-		proc {ExplosionMissile PositionExp} %Attention pas de diff mine et missile
-				local MineTemp MessageMine1 MessageMine2 Death in
-				{Send  PlayerList.1.port sayMissileExplode(PlayerList.1.id PositionExp MessageMine1)}
-				case MessageMine1
-					of nil then skip
-					[]sayDeath(ID) then Death=true
-					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.2.id LifeLeft)}
-					else skip
-				end
-
-				{Send  PlayerList.1.port sayMissileExplode(PlayerList.2.id PositionExp MessageMine2)}
-				case MessageMine2
-					of nil then skip
-					[]sayDeath(?ID) then Death=true
-					[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(PlayerList.1.id LifeLeft)}
-					else skip
-				end
-				end
-		end
 
 		%play turn by turn
-		fun {Playturn Player Item Round}
+		fun {Playturn Player Round}
 
+          local PosMine PosMissile ExplosionMissile  ExplosionMine in
 					%placed func here so can use State
-					proc {ExplosionMissile PositionExp Target} %Attention pas de diff mine et missile
-							local MineTemp MessageMissile Death in
-								{Send  Target.port sayMissileExplode(Player.id PositionExp MessageMissile)}
+					proc {ExplosionMissile Target} %Attention pas de diff mine et missile
+							local MessageMissile Death in
+								{Send  Target.port sayMissileExplode(Player.id PosMissile MessageMissile)}
 								{Wait MessageMissile}
 								case MessageMissile
+									of nil then skip
+									[]sayDeath(ID) then {Send GUI_port removePlayer(ID)}
+									[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(ID LifeLeft)}    % send only to GUI , have to send to everybody
+									else skip
+								end
+							end
+					end
+
+					proc {ExplosionMine Target} %Attention pas de diff mine et missile
+							local MessageMine Death in
+								{Send  Target.port sayMineExplode(Player.id PosMine MessageMine)}
+								{Wait MessageMine}
+								case MessageMine
 									of nil then skip
 									[]sayDeath(ID) then {Send GUI_port removePlayer(ID)}
 									[]sayDamageTaken(ID Damage ?LifeLeft) then {Send GUI_port lifeUpdate(ID LifeLeft)} % send only to GUI , have to send to everybody
@@ -130,6 +105,8 @@ in
 								end
 							end
 					end
+
+
 
 					{Delay 100}    %juste pour less tests c'est plus visible a virer
 					if Round==0 then {Send Player.port dive()} end %required by consigne
@@ -143,82 +120,99 @@ in
 							{Wait DirTemp}
 							{Send GUI_port movePlayer(Player.id PosTemp)}
 							{System.show move_done}
+						%	{System.show PlayerList}
 
+						  %if PosTemp \= surface then {List.forAll PortList proc {$ PortA}  {System.show surface_wesh} {Send PortA sayMove(Player.id DirTemp)}  end}
+							if PosTemp \= surface then  {System.show surface_wesh} % {List.forAll 1|2|3|nil proc {$ A}  {System.show A}  end}
 
-						  if PosTemp \= surface then {Send (if Player.id==1 then PlayerList.1.port else PlayerList.2.port end)  sayMove(Player.id DirTemp)}  %add broadcast
+							{System.show postemp_transmitted}
 
 									%allow player to charge FireItem
 									{Send Player.port chargeItem(Player.id ItemTemp)}
 									{Wait ItemTemp}
 									{System.show chargeitem}
-									if ItemTemp \= null then {Send (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayCharge(Player.id ItemTemp)} end %add broadcast
+									{System.show ItemTemp}
+									if ItemTemp \= null then 	{List.forAll PortList proc {$ A} {System.show messsage} {Send A sayCharge(Player.id ItemTemp)} end} end
+									{System.show messsageCharged}
 
-										%allow player to fire Item
-										{Send Player.port fireItem(Player.id FireTemp)}
-										{Wait FireTemp}
-										case FireTemp
-										     of missile(pt(x:_ y:_)) then {ExplosionMissile FireTemp.1}
-												 [] mine(pt(x:_ y:_))    then {Send GUI_port putMine(Player.id FireTemp.1)}
-												 []	drone(_ _ )		       then {Send  (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayPassingDrone(FireTemp IdTarget PosTarget)} 	{System.show drone} 	{System.show PosTarget} {Send  Player.port sayAnswerDrone(FireTemp IdTarget PosTarget)}%pssitargert answertarget
-												 [] sonar 							 then {Send  (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  sayPassingSonar(IdTargetSon PosTargetSon)}{Send  Player.port sayAnswerSonar(IdTargetSon PosTargetSon)}
-												 else {System.show rieeeennn}
-										end
+									%allow player to fire Item
+									{Send Player.port fireItem(Player.id FireTemp)}
+									{Wait FireTemp}
+									case FireTemp
+									     of missile(pt(x:_ y:_)) then {List.forAll PortList ExplosionMissile}
+											 [] mine(pt(x:_ y:_))    then {Send GUI_port putMine(Player.id FireTemp.1)}
+											 []	drone(_ _ )		       then {List.forAll PortList proc {$ PortA} local IdTarget PosTarget in {Send PortA sayPassingDrone(FireTemp IdTarget PosTarget)} {Send  Player.port sayAnswerDrone(FireTemp IdTarget PosTarget)} end end}
+											 [] sonar 							 then {List.forAll PortList proc {$ PortA} local IdTargetSon PosTargetSon in {Send PortA sayPassingSonar(IdTargetSon PosTargetSon)} {Send  Player.port sayAnswerSonar(IdTargetSon PosTargetSon)} end end}
+									 	 	 else {System.show rieeeennn}
+									end
 
+									{System.show FireTemp}
+									{System.show endfireitemmmmmmmmmmmmmmmmm}
+									{Send Player.port isDead(Death)}
+									{Wait Death}
 
-										{System.show FireTemp}
-										{System.show endfireitemmmmmmmmmmmmmmmmm}
-										{Send Player.port isDead(Death)}
-										{Wait Death}
-
-
-										if (Death \= true) then
-												%allow player to detonate mine
-												{System.show Player.id}
-												{Send Player.port fireMine(Player.id MineTemp)}
-												{Wait MineTemp}
-												{System.show detonateminem}
-												if MineTemp \= null then
-																								{System.show explosion_mine}
-																								{ExplosionMissile MineTemp}
-																								{Send GUI_port removeMine(Player.id MineTemp)}
-																								end
-				  					end
+									if (Death \= true) then
+											%allow player to detonate mine
+											{System.show Player.id}
+											{Send Player.port fireMine(Player.id MineTemp)}
+											{Wait MineTemp}
+											{System.show detonateminem}
+											if MineTemp \= null then
+																							{System.show explosion_mine}
+																							{ExplosionMine MineTemp}
+																							{Send GUI_port removeMine(Player.id MineTemp)}
+											end
+			  					end
 							else
-								{Send (if Player.id==1 then PlayerList.2.port else PlayerList.1.port end)  saySurface(Player.id)}
+							  {List.forAll PortList proc {$ A} {Send A  saySurface(Player.id)} end}
 								{Send Player.port dive()}
 								{Send GUI_port surface(Player.id)}
 
 							end % si en surface passe son tour
-							{System.show premesssagedeath}
-							{Send Player.port isDead(MessageDeath)}
-							{System.show ppostmesssagedeath}
 
+							{System.show premessageDeath}
+							{Send Player.port isDead(MessageDeath)}
 							{Wait MessageDeath}
 							{System.show MessageDeath}
-
 							MessageDeath
-					end
-		end
-
-
-		%Fonction utile pour le jeux
-		fun {LauchgameTurn Round} %rajouter sayDeath au cas ou il est mort pendant le tour de l'autre
-				{System.show round}
-				{System.show Round}
-				if ({Playturn PlayerList.1 null Round}) then
-																										{Send GUI_port removePlayer(ID1)}
-																										win2
-				else
-					if {Playturn PlayerList.2 null Round} then
-																										{Send GUI_port removePlayer(ID2)}
-																										win1
-					else
-						if Round<4000 then  {LauchgameTurn Round+1}
-						else game_end
-						end
 					end
 				end
 		end
+
+
+
+
+		%Fonction utile pour le jeux
+		proc {LauchgameTurn Round AliveList} %rajouter sayDeath au cas ou il est mort pendant le tour de l'autre
+				{System.show round}
+				{System.show Round}
+				{System.show AliveList}
+
+				local Message in
+						case AliveList
+										of nil then {System.show 'no player , something went wrong'}
+										[] H|T then
+																if H==nil then  {LauchgameTurn Round +1 AliveList}
+																else
+												           if T \= nil then
+
+																					 			{Send H.port isDead(Message)} {Wait Message}
+																								if Message==false then if {Playturn H Round}==false then {LauchgameTurn Round AliveList}
+																																			 else {LauchgameTurn Round T}
+																																			 end
+																								else {LauchgameTurn Round T|H}
+																								end
+
+																	 else
+																	 			{System.show AliveList}
+																	 			{System.show winner}
+																				{System.show T}
+																	 end
+															 	end
+							end
+				end
+		end
+
 
 
 	% initialise les players et leur Position ------------
@@ -233,17 +227,26 @@ in
 
 
 
-	PlayerList=player(port:{PlayerManager.playerGenerator player1 red 1} id:ID1 color:red kind:player1 item:_)|player(port:{PlayerManager.playerGenerator player2 blue 2} id:ID2 color:blue kind:player2 item_)|player(port:{PlayerManager.playerGenerator player3 green 3} id:ID3 color:green kind:player3 item:_)
+	PlayerList=player(port:{PlayerManager.playerGenerator player1 red 1} id:ID1 color:red kind:player1 item:_)|player(port:{PlayerManager.playerGenerator player2 blue 2} id:ID2 color:blue kind:player2 item_)|player(port:{PlayerManager.playerGenerator player3 green 3} id:ID3 color:green kind:player3 item:_)|nil
   PortList={MakePortList PlayerList}
 
 	{System.show player1_Info}
 
   {InitiatePlayers PlayerList 1}
 
+	{System.show premesssage}
+%	{System.show PlayerList}
+
+	Maman = 1|2|3|nil
+
+	{List.forAll Maman proc {$ A} {System.show messsage} end}
+
+	{List.forAll PlayerList proc {$ A} {System.show messsage} end}
+
 	%Lance le jeux
 	{System.show done}
 	{Delay 3000}%time to load GUI
-	%{System.show {LauchgameTurn 0}}
+%  {LauchgameTurn 0 PlayerList }
 	{System.show 'Game will be terminated in 10 sec'}%
   {Delay 10000}
 	{System.show 'Prank je sais pas comment quitter'}%
