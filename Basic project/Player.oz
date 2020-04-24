@@ -43,6 +43,7 @@ define
    ValidItem
    RemoveDrone
    RemoveSonar
+   Bite%a enlever
 in
 
    fun{IsIsland L X Y} %testé et approuvé
@@ -149,7 +150,7 @@ in
    %deal with false path also perfect place for intelligence while move is logisstic
    fun {GetNewPos State}
 
-      local CandPos CandDir ListPosDir in
+      local CandPos CandDir ListPosDir PosDir in
              % pick at random a path
 	 CandDir={FindInList [east south west north surface] {Random 5}}
 	 {System.show newcandir}
@@ -165,7 +166,7 @@ in
 
             %check if pos is valid
 	 if ({IsValidPath State.path CandPos}==true) then       %isvalid surface bug?
-	    ListPosDir=CandPos|CandDir
+	    PosDir=CandPos|CandDir
 	 else
 	    if CandDir == surface then %isvalid surface bug?
 	       ListPosDir=CandPos|CandDir
@@ -501,13 +502,13 @@ in
 
    fun{SayPassingDrone Drone State}
       case Drone of drone(row _) then
-          	 if State.pos.x==drone.2 then true
-          	 else false
-          	 end
+	 if State.pos.x==drone.2 then true
+	 else false
+	 end
       [] drone(column _) then
-          	 if State.pos.y==drone.2 then true
-          	 else false
-          	 end
+	 if State.pos.y==drone.2 then true
+	 else false
+	 end
       else false
       end
    end
@@ -528,22 +529,22 @@ in
 
    fun{SayPassingSonar State}
       local R C in
-          	 R={Random 2}
-          	 if R==1 then
-          	    C={Random Input.nColumn}
-          	    if {IsIsland Input.Map State.pos.x C}==0 then
-          	       pt(x:State.pos.x y:C)
-          	    else
-          	       {SayPassingSonar State}
-          	    end
-          	 else
-          	    C={Random Input.nRow}
-          	    if {IsIsland Input.Map C State.pos.y}==0 then
-          	       pt(x:C y:State.pos.y)
-          	    else
-          	       {SayPassingSonar State}
-          	    end
-          	 end
+	 R={Random 2}
+	 if R==1 then
+	    C={Random Input.nColumn}
+	    if {IsIsland Input.Map State.pos.x C}==0 then
+	       pt(x:State.pos.x y:C)
+	    else
+	       {SayPassingSonar State}
+	    end
+	 else
+	    C={Random Input.nRow}
+	    if {IsIsland Input.Map C State.pos.y}==0 then
+	       pt(x:C y:State.pos.y)
+	    else
+	       {SayPassingSonar State}
+	    end
+	 end
       end
    end
 
@@ -552,7 +553,7 @@ in
    end
 
    proc {SayDeath ID}% react to player death
-          {System.show saydeath}
+      {System.show saydeath}
    end
 
    fun{SayDamageTaken ID Damage lifeLeft}
@@ -563,12 +564,16 @@ in
       Stream
       Port
       PlayerState
+      Position
+      ID2
    in
+      {System.show bite}
       %immersed pour savoir si il est en surface ou pas
       PlayerState = player(id:id(id:ID color:Color name:fishy) ide:id(potPos:{TournerMap 1} life:Input.maxDamage) path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)  % list misssile?
-      {NewPort Stream Port}
+      %{NewPort Stream Port}      
+      Stream=[initPosition(ID2 Position) dive]   
       thread
-	 {System.show start_play}
+	 {System.show start_playfdp}
 	 {TreatStream Stream PlayerState}
       end
       Port
@@ -577,9 +582,12 @@ in
    proc {TreatStream Stream State}
       {System.show state}
       {System.show State}
+      {System.show stream}
+      {System.show Stream}
 
       case Stream of nil then skip
       [] initPosition(?ID ?Position)|T then
+	 {System.show initposition}
 	 ID=State.id
 	 Position={RandomPosition Input.map}
 	 local Newstate in
@@ -588,6 +596,7 @@ in
 	 end
 
       [] move(ID ?Position ?Direction)|T then
+	 {System.show onestdansmove}
 	 ID=State.id
 	 local Newstate in
 	    Newstate={Move ?Position ?Direction State}
@@ -596,12 +605,15 @@ in
 	 end
 
       [] dive|T then
+	 {System.show dive}
 	 local Newstate in
+	    {System.show plongeeSousMarine}
 	    Newstate={Record.adjoin State player(immersed:true)}
 	    {TreatStream T Newstate}
 	 end
 
       [] chargeItem(?ID ?KindItem)|T then
+	 {System.show chargeItem}
 	 ID=State.id 
 	 local Newstate in
 	    Newstate={ChargeItem ?KindItem State}
@@ -609,6 +621,7 @@ in
 	 end
 
       [] fireItem(?ID ?KindFire)|T then
+	 {System.show fireItem}
 	 ID=State.id
 	 local Newstate ListFire in
 	    Newstate={FireItem ?KindFire  State}
@@ -625,6 +638,7 @@ in
 	 end
 
       [] isDead(?Answer)|T then
+	 {System.show isDead} 
 	 if State.life==0 then Answer=true
 	 else Answer=false
 	 end
@@ -654,10 +668,10 @@ in
 	 end
 
       [] sayMineExplode(ID Position ?Message)|T then %simon
-        	 local Newstate in
-        	    Newstate={SayMineExplode ID Position ?Message State}
-        	    {TreatStream T Newstate}
-        	 end
+	 local Newstate in
+	    Newstate={SayMineExplode ID Position ?Message State}
+	    {TreatStream T Newstate}
+	 end
 
       [] sayAnswerDrone(Drone ?ID ?Answer)|T then
 	 local Newstate in
@@ -675,12 +689,12 @@ in
 	    {TreatStream T Newstate}
 	 end
       [] sayPassingSonar(?ID ?Answer)|T then
-        	 ID=State.id
-        	 Answer={SayPassingSonar State} %quid? pas vraiment  / non?
-        	 {TreatStream T State}
+	 ID=State.id
+	 Answer={SayPassingSonar State} %quid? pas vraiment  / non?
+	 {TreatStream T State}
 
       [] sayDeath(ID)|T then {SayDeath ID}
-	         {TreatStream T State}
+	 {TreatStream T State}
 
       [] sayDamageTaken(ID Damage lifeLeft)|T then {SayDamageTaken ID Damage lifeLeft 0}
 	 {TreatStream T State}
@@ -691,5 +705,10 @@ in
 
       end
    end
+
+   {Browse 'zizi'}
+   Bite={StartPlayer blue 1}
+   {System.show Bite}
+   {System.show endofthegame}
 end
 % enlevé tout les {{...} State } ... smart?

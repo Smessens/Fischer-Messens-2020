@@ -27,7 +27,7 @@ gui:
 
 player:
 	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c Player.oz
-	/Applications/Mozart2.app/Contents/Resources/bin/ozc -c main.oz
+	/Applications/Mozart2.app/Contents/Resources/bin/ozengine player.ozf
 
 	/Applications/Mozart2.app/Contents/Resources/bin/ozengine  main.ozf
 
