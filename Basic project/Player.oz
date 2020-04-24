@@ -274,7 +274,6 @@ in
    fun{ChargeItem ?KindItem State}
       {System.show chargeitem}
 
-
       local PosItem TempItem in
 	 PosItem=[mine missile drone sonar]
 	 TempItem={FindInList PosItem {Random 4}}
@@ -284,37 +283,37 @@ in
 
 	 case TempItem of mine then
 	    if State.loadMine+1==Input.mine then
-	       KindItem=null
+	       KindItem=mine
 	       {Record.adjoin State player(loadMine:0 numberMine:State.numberMine+1)}
 	    else
-	       KindItem=mine
+	       KindItem=null
 	       {Record.adjoin State player(loadMine:State.loadMine+1)}
 	    end
 
 	 [] missile then
 	    if State.loadMissile+1==Input.missile then
-	       KindItem=null
+	       KindItem=missile
 	       {Record.adjoin State player(loadMissile:0 numberMissile:State.numberMissile+1)}
 	    else
-	       KindItem=missile
+	       KindItem=null
 	       {Record.adjoin State player(loadMissile:State.loadMissile+1)}
 	    end
 
 	 [] drone then
 	    if State.loadDrone+1==Input.drone then
-	       KindItem=null
+	       KindItem=drone
 	       {Record.adjoin State player(loadDrone:0 numberDrone:State.numberDrone+1)}
 	    else
-	       KindItem=drone
+	       KindItem=null
 	       {Record.adjoin State player(loadDrone:State.loadDrone+1)}
 	    end
 
 	 [] sonar then
 	    if State.loadSonar+1==Input.sonar then
-	       KindItem=null
+	       KindItem=sonar
 	       {Record.adjoin State player(loadSonar:0 numberSonar:State.numberSonar+1)}
 	    else
-	       KindItem=sonar
+	       KindItem=null
 	       {Record.adjoin State player(loadSonar:State.loadSonar+1)}
 
 	    end
@@ -368,9 +367,7 @@ in
 
    fun{FireItem ?KindFire State} % Listfire étrange? version smart buggé donc remplacé par tout con , peut etre trouvée au commit updateplayer du 20/4
       {System.show  fireitem}
-
       local Fire FireList in
-
 
 	 Fire={ValidItem [mine missile drone sonar rien]  State}.1
 	 {System.show  fireList}
@@ -384,7 +381,7 @@ in
 	    {Record.adjoin State player(numberMissile:State.numberMissile-1)} %enlevé list missile
 
 	 [] drone then
-	    KindFire=drone(1:row 2:{Random 8}) % nrow bugged? remplaced by 8 for the time being
+	    KindFire=drone(row {Random Input.nRow}) % nrow bugged? remplaced by 8 for the time being
 	    {Record.adjoin State player(numberDrone:State.numberDrone-1)}
 
 	 [] sonar then
@@ -394,8 +391,6 @@ in
 	 else
 	    KindFire=null
 	    State
-
-
 	 end
       end
 
@@ -566,12 +561,14 @@ in
       PlayerState
       Position
       ID2
+      KindItem
+      KindFire
    in
       {System.show bite}
       %immersed pour savoir si il est en surface ou pas
       PlayerState = player(id:id(id:ID color:Color name:fishy) ide:id(potPos:{TournerMap 1} life:Input.maxDamage) path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)  % list misssile?
       %{NewPort Stream Port}      
-      Stream=[initPosition(ID2 Position) dive]   
+      Stream=[fireItem(?ID2 ?KindFire)]   
       thread
 	 {System.show start_playfdp}
 	 {TreatStream Stream PlayerState}
