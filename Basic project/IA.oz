@@ -1,6 +1,118 @@
 functor
 import
    Input at 'Input.ozf'
+   System
+define
+   Lista
+   MaxIteration
+   ListOfPoint
+   Mine
+   Var
+   
+in
+   %crée une liste allant de N à 1 
+   fun{Lista N}
+      if N==0 then nil
+      else N|{Lista N-1}
+      end
+   end
+
+   %pour savoir combien de fois A est dans L
+   fun{MaxIteration L A}
+      {System.show maxiteration}
+      local MaxIteration2 in
+	 fun{MaxIteration2 L A C}
+	    case L of nil then
+	       {System.show endmaxiteration}
+	       {System.show C}
+	       C
+	    [] H|T then
+	       if H==A then {MaxIteration2 T A C+1}
+	       else {MaxIteration2 T A C}
+	       end
+	    end
+	 end
+	 {MaxIteration2 L A 0}
+      end
+   end
+
+   %faire une liste avec tous les points en X ou en Y d'une liste de point 
+   fun{ListOfPoint L I}
+      case L of nil then
+	 {System.show endofthisfuckingshit}
+	 nil
+      []H|T then
+	 if I==0 then
+	    {System.show T}
+	    H.x|{ListOfPoint T I}
+	 else
+	    H.y|{ListOfPoint T I}
+	 end
+      end
+   end
+
+   %fct pour trouver quel est le X ou le Y qui se retrouve le plus dans les positions possibles de l'adversaire (pour placer un missile/drone, pas une mine)
+   %j'ai appelé cette fonction mine mais c est pas pour les mines 
+   fun{Mine List}
+      local List0 List1 List2 List3 Count Mine2 Res1 Res2 in
+	 List0={ListOfPoint List 0} %liste tous avec les points
+	 {System.show List0}
+	 List1={ListOfPoint List 1}
+	 {System.show List1}
+	 List2={Lista Input.nRow} 
+	 {System.show list2}
+	 {System.show List2}
+	 List3={Lista Input.nColumn}
+	 {System.show List2}
+	 fun{Mine2 L L2 C A}
+	    {System.show mine2}
+	    case L2 of nil then d(count:C coo:A) %on renvoie la coordonnée et son nombre d'itérations 
+	    [] H|T then
+	       {System.show h}
+	       {System.show H}
+	       {System.show jesuisici}
+	       if({MaxIteration L H}>C) then
+		  {System.show ici1}
+		  {Mine2 L T {MaxIteration L H} H}
+	       else
+		  {System.show ici2}
+		  {Mine2 L T C A}
+	       end
+	    end
+	 end
+	 {System.show before}
+	 Res1={Mine2 List0 List2 0 0}
+	 {System.show between}
+	 Res2={Mine2 List1 List3 0 0}
+	 {System.show after}
+	 {System.show Res1}
+	 {System.show Res2}
+	 if Res1.count<Res2.count then
+	    {System.show fuckingjoke}
+	    Res2.coo
+	 else
+	    {System.show fuckingjoke2}
+	    Res1.coo
+	 end
+      end
+      {System.show endofmine}
+   end
+
+      
+      
+   
+   Var={Mine [pt(x:0 y:1) pt(x:2 y:1) pt(x:3 y:1) pt(x:0 y:0) pt(x:4 y:1) pt(x:0 y:0) pt(x:4 y:4)]}
+   {System.show Var}
+
+   {System.show endoftheprogram}
+   {System.show fuckyeah}
+end
+
+
+/*
+functor
+import
+   Input at 'Input.ozf'
    Browser(browse:Browse)
 define
    IsIsland
@@ -183,3 +295,4 @@ in
 
    {Browse {Where east 1 2}}
 end
+*/
