@@ -113,7 +113,7 @@ in
 
    % Cette fonction sert pour savoir si oui ou non la Direction est possible à la position pt(x:X y:Y) sur la Input.map
    fun{Where Direction X Y}%validée
-      local CandPos in 
+      local CandPos in
 	 case Direction of east then CandPos=pt(x:X y:Y+1)
 	 [] south then CandPos=pt(x:X+1 y:Y)
 	 [] west then CandPos=pt(x:X y:Y-1)
@@ -128,7 +128,7 @@ in
    %Cette fonction permet de créer une liste avec les positions potentielles de l'ennemi IDEnemy
    %fct à faire tourner au début, génère tous les points où il y a pas d'ile sur la map et la retourne sous forme de liste
    %{Record.adjoin State player(id:id(id:IDEnemy(potPos:Acc)))}
-   fun{TournerMap K} % testée et approuvée 
+   fun{TournerMap K} % testée et approuvée
       local TournerMap2 in
 	 fun {TournerMap2 X Y Acc}
 	    if Y>Input.nColumn then
@@ -178,9 +178,9 @@ in
       end
    end
 
-   fun{RemoveDrone Li Xi N} %testée et approuvée 
-      local Point X Y in 
-	 if N==1 then %True et X 
+   fun{RemoveDrone Li Xi N} %testée et approuvée
+      local Point X Y in
+	 if N==1 then %True et X
 	    case Li of nil then nil
 	    []H|T then
 	       X=H.x
@@ -192,7 +192,7 @@ in
 		  {RemoveDrone T Xi N}
 	       end
 	    end
-	 elseif N==2 then %False et X 
+	 elseif N==2 then %False et X
 	    case Li of nil then nil
 	    []H|T then
 	       X=H.x
@@ -233,7 +233,7 @@ in
    end
 
    %enlève les points qui n'ont ni X ni Y en commun avec sonar
-   fun{RemoveSonar L Xs Ys} %testée et approuvée 
+   fun{RemoveSonar L Xs Ys} %testée et approuvée
       local X Y Point in
 	 case L of nil then nil
 	 [] H|T then
