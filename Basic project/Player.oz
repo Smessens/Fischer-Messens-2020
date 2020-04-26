@@ -256,7 +256,7 @@ in
    end
 
 
-   fun{Move ?Position ?Direction State}
+   fun{Move ?Position ?Direction State} 
       {System.show newmove}
 
       local  ListPosDir  in
@@ -275,7 +275,7 @@ in
       end
    end
 
-   fun{ChargeItem ?KindItem State}
+   fun{ChargeItem ?KindItem State} %comment ça se charge ? on peut choisir ? 
       {System.show chargeitem}
 
       local PosItem TempItem in
@@ -369,6 +369,50 @@ in
       end
    end
 
+   fun{FireItem ?KindFire State} % Listfire étrange? version smart buggé donc remplacé par tout con , peut etre trouvée au commit updateplayer du 20/4
+      {System.show  fireitem}
+      local Fire FireList in
+	 Fire={ValidItem [mine missile drone sonar rien]  State}.1
+	 {System.show  fireList}
+
+	 case Fire of mine then
+	    KindFire=mine(State.pos)
+	    {Record.adjoin State player(listMine:KindFire|State.listMine numberMine:State.numberMine-1)}
+
+	 [] missile then
+	    KindFire=missile({RandomPosition Input.map})
+	    {Record.adjoin State player(numberMissile:State.numberMissile-1)} %enlevé list missile
+
+	 [] drone then
+	    KindFire=drone(row {Drone State.ide.potPos}) % nrow bugged? remplaced by 8 for the time being
+	    {Record.adjoin State player(numberDrone:State.numberDrone-1)}
+
+	 [] sonar then
+	    KindFire=sonar
+	    {Record.adjoin State player(numberSonar:State.numberSonar-1)}
+
+	 else
+	    KindFire=null
+	    State
+	 end
+      end
+
+   end
+
+   fun{FireMine ?Mine State}
+      {System.show firemine}
+      {System.show State.listMine}
+
+      if State.listMine==nil then
+	 Mine=null
+	 State
+      else
+	 {System.show fireMine2}
+	 Mine=State.listMine.1.1 %first object first argument (which is position)
+	 {Record.adjoin State player(listMine:{RemoveFromList State.listMine State.listMine.1})}
+      end
+   end
+
    %crée une liste allant de N à 1
    fun{Lista N}
       if N==0 then nil
@@ -428,51 +472,6 @@ in
 	 else
 	    drone(row Res1.coo)
 	 end
-      end
-   end
-
-   fun{FireItem ?KindFire State} % Listfire étrange? version smart buggé donc remplacé par tout con , peut etre trouvée au commit updateplayer du 20/4
-      {System.show  fireitem}
-      local Fire FireList in
-	 Fire=missile
-	 %Fire={ValidItem [mine missile drone sonar rien]  State}.1
-	 {System.show  fireList}
-
-	 case Fire of mine then
-	    KindFire=mine(State.pos)
-	    {Record.adjoin State player(listMine:KindFire|State.listMine numberMine:State.numberMine-1)}
-
-	 [] missile then
-	    KindFire=missile({RandomPosition Input.map})
-	    {Record.adjoin State player(numberMissile:State.numberMissile-1)} %enlevé list missile
-
-	 [] drone then
-	    KindFire=drone(row {Drone State.ide.potPos}) % nrow bugged? remplaced by 8 for the time being
-	    {Record.adjoin State player(numberDrone:State.numberDrone-1)}
-
-	 [] sonar then
-	    KindFire=sonar
-	    {Record.adjoin State player(numberSonar:State.numberSonar-1)}
-
-	 else
-	    KindFire=null
-	    State
-	 end
-      end
-
-   end
-
-   fun{FireMine ?Mine State}
-      {System.show firemine}
-      {System.show State.listMine}
-
-      if State.listMine==nil then
-	 Mine=null
-	 State
-      else
-	 {System.show fireMine2}
-	 Mine=State.listMine.1.1 %first object first argument (which is position)
-	 {Record.adjoin State player(listMine:{RemoveFromList State.listMine State.listMine.1})}
       end
    end
 
@@ -613,10 +612,6 @@ in
       {System.show sayAnswerSonar}
    end
 
-   proc {SayDeath ID}% react to player death
-      {System.show saydeath}
-   end
-
    fun{SayDamageTaken ID Damage lifeLeft}
       {Browse 1}
    end
@@ -753,18 +748,23 @@ in
 	 end
       [] sayPassingSonar(?ID ?Answer)|T then
 	 ID=State.id
-	 Answer={SayPassingSonar State} %quid? pas vraiment  / non?
+	 Answer={SayPassingSonar State} %quid? pas vraiment  / non? => pas compris ta remarque 
 	 {TreatStream T State}
 
-      [] sayDeath(ID)|T then {SayDeath ID}
-	 {TreatStream T State}
+      [] sayDeath(ID)|T then
+	 local Newstate in
+	    Newstate={Record.adjoin State player(ide:id(life:0))}
+	    {TreatStream T Newstate}
+	 end
 
-      [] sayDamageTaken(ID Damage lifeLeft)|T then {SayDamageTaken ID Damage lifeLeft 0}
-	 {TreatStream T State}
+      [] sayDamageTaken(ID Damage LifeLeft)|T then
+	 local Newstate in
+	    Newstate={Record.adjoin State player(ide:id(life:LifeLeft))}
+	    {TreatStream T Newstate}
+	 end
 
       else
 	 {System.show Stream}
-
 
       end
    end
