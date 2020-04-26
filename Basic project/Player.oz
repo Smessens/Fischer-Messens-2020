@@ -43,6 +43,10 @@ define
    ValidItem
    RemoveDrone
    RemoveSonar
+   Lista
+   MaxIteration
+   ListOfPoint
+   Drone
    Bite%a enlever
 in
 
@@ -252,7 +256,7 @@ in
    end
 
 
-   fun{Move ?Position ?Direction State}
+   fun{Move ?Position ?Direction State} 
       {System.show newmove}
 
       local  ListPosDir  in
@@ -271,7 +275,7 @@ in
       end
    end
 
-   fun{ChargeItem ?KindItem State}
+   fun{ChargeItem ?KindItem State} %comment ça se charge ? on peut choisir ? 
       {System.show chargeitem}
 
       local PosItem TempItem in
@@ -368,7 +372,6 @@ in
    fun{FireItem ?KindFire State} % Listfire étrange? version smart buggé donc remplacé par tout con , peut etre trouvée au commit updateplayer du 20/4
       {System.show  fireitem}
       local Fire FireList in
-
 	 Fire={ValidItem [mine missile drone sonar rien]  State}.1
 	 {System.show  fireList}
 
@@ -381,7 +384,7 @@ in
 	    {Record.adjoin State player(numberMissile:State.numberMissile-1)} %enlevé list missile
 
 	 [] drone then
-	    KindFire=drone(row {Random Input.nRow}) % nrow bugged? remplaced by 8 for the time being
+	    KindFire=drone(row {Drone State.ide.potPos}) % nrow bugged? remplaced by 8 for the time being
 	    {Record.adjoin State player(numberDrone:State.numberDrone-1)}
 
 	 [] sonar then
@@ -407,6 +410,68 @@ in
 	 {System.show fireMine2}
 	 Mine=State.listMine.1.1 %first object first argument (which is position)
 	 {Record.adjoin State player(listMine:{RemoveFromList State.listMine State.listMine.1})}
+      end
+   end
+
+   %crée une liste allant de N à 1
+   fun{Lista N}
+      if N==0 then nil
+      else N|{Lista N-1}
+      end
+   end
+
+   %pour savoir combien de fois A est dans L
+   fun{MaxIteration L A}
+      local MaxIteration2 in
+	 fun{MaxIteration2 L A C}
+	    case L of nil then C
+	    [] H|T then
+	       if H==A then {MaxIteration2 T A C+1}
+	       else {MaxIteration2 T A C}
+	       end
+	    end
+	 end
+	 {MaxIteration2 L A 0}
+      end
+   end
+
+   %faire une liste avec tous les points en X ou en Y d'une liste de point
+   fun{ListOfPoint L I}
+      case L of nil then
+	 nil
+      []H|T then
+	 if I==0 then
+	    H.x|{ListOfPoint T I}
+	 else
+	    H.y|{ListOfPoint T I}
+	 end
+      end
+   end
+
+   %fct pour trouver quel est le X ou le Y qui se retrouve le plus dans les positions possibles de l'adversaire (pour placer un missile/drone)
+   fun{Drone List}
+      local List0 List1 List2 List3 Count Drone2 Res1 Res2 in
+	 List0={ListOfPoint List 0} %liste tous avec les points
+	 List1={ListOfPoint List 1}
+	 List2={Lista Input.nRow}
+	 List3={Lista Input.nColumn}
+	 fun{Drone2 L L2 C A}
+	    case L2 of nil then d(count:C coo:A) %on renvoie la coordonnée et son nombre d'itérations
+	    [] H|T then
+	       if({MaxIteration L H}>C) then
+		  {Drone2 L T {MaxIteration L H} H}
+	       else
+		  {Drone2 L T C A}
+	       end
+	    end
+	 end
+	 Res1={Drone2 List0 List2 0 0}
+	 Res2={Drone2 List1 List3 0 0}
+	 if Res1.count<Res2.count then
+	    drone(column Res2.coo)
+	 else
+	    drone(row Res1.coo)
+	 end
       end
    end
 
@@ -547,10 +612,6 @@ in
       {System.show sayAnswerSonar}
    end
 
-   proc {SayDeath ID}% react to player death
-      {System.show saydeath}
-   end
-
    fun{SayDamageTaken ID Damage lifeLeft}
       {Browse 1}
    end
@@ -687,18 +748,23 @@ in
 	 end
       [] sayPassingSonar(?ID ?Answer)|T then
 	 ID=State.id
-	 Answer={SayPassingSonar State} %quid? pas vraiment  / non?
+	 Answer={SayPassingSonar State} %quid? pas vraiment  / non? => pas compris ta remarque 
 	 {TreatStream T State}
 
-      [] sayDeath(ID)|T then {SayDeath ID}
-	 {TreatStream T State}
+      [] sayDeath(ID)|T then
+	 local Newstate in
+	    Newstate={Record.adjoin State player(ide:id(life:0))}
+	    {TreatStream T Newstate}
+	 end
 
-      [] sayDamageTaken(ID Damage lifeLeft)|T then {SayDamageTaken ID Damage lifeLeft 0}
-	 {TreatStream T State}
+      [] sayDamageTaken(ID Damage LifeLeft)|T then
+	 local Newstate in
+	    Newstate={Record.adjoin State player(ide:id(life:LifeLeft))}
+	    {TreatStream T Newstate}
+	 end
 
       else
 	 {System.show Stream}
-
 
       end
    end
