@@ -193,8 +193,9 @@ in
 		end
 
 		proc {StimulateThinking}
-	        	{Delay ({OS.rand} mod (Input.thinkMax-Input.thinkMin+1)) + Input.thinkMin}
-						{Delay 2000}%{Random Input.thinkMax-Input.thinkMin}+Input.thinkMin}
+	        %	{Delay ({OS.rand} mod (Input.thinkMax-Input.thinkMin+1)) + Input.thinkMin}
+						{Delay 11}
+
 		end
 
 
@@ -282,24 +283,20 @@ in
 								{Delay Input.turnSurface}
 								{Send Player.port dive}
 						end
-
-
-
-
-
-
 				end% fin OneTurn
-
-
-
-
-
 
 	          {OneTurn 0}
 						{System.show simultaneous}
 						{System.show Player.id.id}
-						{StimulateThinking}
-						{SimultaneousGame Player}
+
+						local MessageDeath in
+							{StimulateThinking}
+							{Send Player.port isDead(MessageDeath)}
+							{Wait MessageDeath}
+							if MessageDeath == false then
+											{SimultaneousGame Player}
+							end
+						end
 				end%fin local
 
 		end
@@ -362,9 +359,9 @@ in
 	{System.show done}
 	{Delay 3000} %time to load GUI
 %  {LauchgameTurn 0 {List.append PlayerList round|nil} 3 }
-	{System.show 'Game will be terminated in 10 sec'}%
-  {Delay 10000}
-	{System.show 'Prank je sais pas comment quitter'}%
+%	{System.show 'Game will be terminated in 10 sec'}%
+%  {Delay 10000}
+%	{System.show 'Prank je sais pas comment quitter'}%
 	%{Exit GUI_port}
 
 	%Lauch simultaneous
