@@ -47,6 +47,7 @@ define
    MaxIteration
    ListOfPoint
    Drone
+   InverseList
    Bite%a enlever
 in
 
@@ -152,34 +153,26 @@ in
 
 
    %deal with false path also perfect place for intelligence while move is logisstic
-   fun {GetNewPos State}
-
-      local CandPos CandDir ListPosDir PosDir in
+   fun {GetNewPos State L}
+      if L==nil then nil
+      else 
+	 local CandPos CandDir ListPosDir PosDir in
+	    CandDir={FindInList L {Random {List.length L}}}
              % pick at random a path
-	 CandDir={FindInList [east south west north surface] {Random 5}}
-	 {System.show newcandir}
-	 {System.show CandDir}
-
-	 case CandDir of
-	    east then        CandPos=pt(x:State.pos.x y:State.pos.y+1)
-	 [] south then       CandPos=pt(x:State.pos.x+1 y:State.pos.y)
-	 [] west then        CandPos=pt(x:State.pos.x y:State.pos.y-1)
-	 [] north then       CandPos=pt(x:State.pos.x-1 y:State.pos.y)
-	 [] surface then     CandPos=State.pos
-	 end
+	    case CandDir of east then CandPos=pt(x:State.pos.x y:State.pos.y+1)
+	    [] south then CandPos=pt(x:State.pos.x+1 y:State.pos.y)
+	    [] west then CandPos=pt(x:State.pos.x y:State.pos.y-1)
+	    [] north then CandPos=pt(x:State.pos.x-1 y:State.pos.y)
+	    end
 
             %check if pos is valid
-	 if ({IsValidPath State.path CandPos}==true) then       %isvalid surface bug?
-	    PosDir=CandPos|CandDir
-	 else
-	    if CandDir == surface then %isvalid surface bug?
-	       ListPosDir=CandPos|CandDir
+	    if ({IsValidPath State.path CandPos}==true) then       %isvalid surface bug?
+	       PosDir=CandPos|CandDir
 	    else
-	       {System.show non_valid}
-	       {GetNewPos State}
+	       {GetNewPos State {RemoveFromList L CandDir}}
 	    end
-	 end
-      end
+	 end 
+      end 
    end
 
    fun{RemoveDrone Li Xi N} %testée et approuvée 
@@ -252,26 +245,6 @@ in
 	       {RemoveSonar T Xs Ys}
 	    end
 	 end
-      end
-   end
-
-
-   fun{Move ?Position ?Direction State} 
-      {System.show newmove}
-
-      local  ListPosDir  in
-
-	 ListPosDir =  {GetNewPos State}
-	 Position=ListPosDir.1
-	 Direction=ListPosDir.2
-
-	 if ListPosDir.2 == surface then  %deal with diving
-	    {Record.adjoin State player(immersed:false path:Position|nil)}
-	 else %no dive
-	    {Record.adjoin State player(pos:Position path:Position|State.path)}
-	 end
-
-
       end
    end
 
@@ -616,6 +589,40 @@ in
       {Browse 1}
    end
 
+   fun{InverseList L}
+      case L of nil then nil
+      [] H|T then
+	 case H of east then west|{InverseList T}
+	 [] west then east|{InverseList T}
+	 [] south then north|{InverseList T}
+	 [] north then south|{InverseList T}
+	 end
+      end
+   end
+
+   fun{Move ?Position ?Direction State} 
+      {System.show newmove}
+      if(State.nbMove==0) then {Record.adjoin State player(n:1 nbMove:5 immersed:false path:nil dir:nil dir2:{List.reverse {InverseList State.dir}})}
+      elseif(State.n==0) then 
+	 local ListPosDir in
+	    ListPosDir =  {GetNewPos State [east north west south]}
+	    if ListPosDir==nil then
+	       {Record.adjoin State player(n:0 nbMove:5 immersed:false path:nil dir:nil)}
+	    end
+	    Position=ListPosDir.1
+	    Direction=ListPosDir.2
+	    {Record.adjoin State player(pos:Position path:Position|State.path dir:Direction|nil)}
+	 end
+      else
+	 case State.dir2.1 of
+	    east then {Record.adjoin State player(pos:pt(x:State.pos.x y:State.pos.y+1) nbMove:State.nbMove-1 path:pt(x:State.pos.x y:State.pos.y+1)|State.path dir2:State.dir2.2)}
+	 [] south then {Record.adjoin State player(pos:pt(x:State.pos.x+1 y:State.pos.y) nbMove:State.nbMove-1 path:pt(x:State.pos.x+1 y:State.pos.y)|State.path dir2:State.dir2.2)}
+	 [] west then {Record.adjoin State player(pos:pt(x:State.pos.x y:State.pos.y-1) nbMove:State.nbMove-1 path:pt(x:State.pos.x y:State.pos.y-1)|State.path dir2:State.dir2.2)}
+	 [] north then {Record.adjoin State player(pos:pt(x:State.pos.x-1 y:State.pos.y) nbMove:State.nbMove-1 path:pt(x:State.pos.x-1 y:State.pos.y)|State.path dir2:State.dir2.2)}
+	 end
+      end
+   end
+
    fun{StartPlayer Color ID}
       Stream
       Port
@@ -627,7 +634,7 @@ in
    in
       {System.show bite}
       %immersed pour savoir si il est en surface ou pas
-      PlayerState = player(id:id(id:ID color:Color name:fishy) ide:id(potPos:{TournerMap 1} life:Input.maxDamage) path:nil pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)  % list misssile?
+      PlayerState = player(id:id(id:ID color:Color name:fishy) ide:id(potPos:{TournerMap 1} life:Input.maxDamage) path:nil dir:nil n:0 dir2:nil nbMove:5 pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)  % list misssile?
       %{NewPort Stream Port}      
       Stream=[fireItem(?ID2 ?KindFire)]   
       thread

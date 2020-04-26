@@ -3,6 +3,71 @@ import
    Input at 'Input.ozf'
    System
 define
+   Path
+   FindInList
+   Histo
+   IsIsland
+   IsValidPath
+
+in
+   fun {FindInList L N}
+      if N==1 then L.1
+      else {FindInList L.2 N-1}
+      end
+   end
+
+   fun{IsValidPath L E} %testé et approuvé
+      local X Y in
+	 pt(x:X y:Y)=E
+	 (X >= 1 andthen X =< Input.nRow andthen Y >= 1 andthen Y =< Input.nColumn) andthen {IsIsland Input.map X Y} == 0 andthen {Histo L E}
+      end
+   end
+
+   fun{IsIsland L X Y} %testé et approuvé
+      local IsIsland2 in
+	 fun{IsIsland2 M A}
+	    if A==1 then M.1
+	    else {IsIsland2 M.2 A-1}
+	    end
+	 end
+	 {IsIsland2 {IsIsland2 L X} Y}
+      end
+   end
+
+   fun{Histo L E} %testé et approuvé
+      case L of nil then true
+      [] H|T then
+	 if H==E then false
+	 else {Histo T E}
+	 end
+      end
+   end
+
+   fun{Path State D}
+      if D==0 then surface|nil
+      end
+      local Candir CandPos in
+	 CandDir={FindInList [east south west north] {Random 4}}
+	 case CandDir of
+	    east then        CandPos=pt(x:State.pos.x y:State.pos.y+1)
+	 [] south then       CandPos=pt(x:State.pos.x+1 y:State.pos.y)
+	 [] west then        CandPos=pt(x:State.pos.x y:State.pos.y-1)
+	 [] north then       CandPos=pt(x:State.pos.x-1 y:State.pos.y)
+	 end
+	 if{IsValidPath State.path}==true then %Remplacer State.path par un accumulateur
+	    Candir|{Path 
+
+end
+
+
+
+
+/*
+functor
+import
+   Input at 'Input.ozf'
+   System
+define
    Lista
    MaxIteration
    ListOfPoint
@@ -81,6 +146,7 @@ in
    {System.show endoftheprogram}
    {System.show fuckyeah}
 end
+*/
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /*
