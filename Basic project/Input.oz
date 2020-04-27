@@ -63,6 +63,7 @@ in
 	  [0 0 0 0 0 0 0 0 0 0]
 	  [0 0 0 0 0 0 0 0 0 0]]
 
+
 %%%% Players description %%%%
 
    NbPlayer = 2
