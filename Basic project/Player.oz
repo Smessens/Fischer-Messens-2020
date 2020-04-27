@@ -23,8 +23,6 @@ define
    SayPassingDrone
    SayAnswerDrone
    SayPassingSonar
-   SayAnswerSonar
-   SayDeath
    SayDamageTaken
 
    %fcts ajoutées
@@ -35,7 +33,6 @@ define
    RandomPosition
    FindInList
    RemoveFromList
-   ListPosDir
    GetNewPos
    Where
    TournerMap
@@ -156,7 +153,7 @@ in
    fun {GetNewPos State L}
       if L==nil then nil
       else 
-	 local CandPos CandDir ListPosDir PosDir in
+	 local CandPos CandDir PosDir in
 	    CandDir={FindInList L {Random {List.length L}}}
              % pick at random a path
 	    case CandDir of east then CandPos=pt(x:State.pos.x y:State.pos.y+1)
@@ -175,7 +172,8 @@ in
       end 
    end
 
-   fun{RemoveDrone Li Xi N} %testée et approuvée 
+   fun{RemoveDrone Li Xi N} %testée et approuvée
+      {System.show removedrone}
       local Point X Y in 
 	 if N==1 then %True et X 
 	    case Li of nil then nil
@@ -343,8 +341,8 @@ in
    end
 
    fun{FireItem ?KindFire State} % Listfire étrange? version smart buggé donc remplacé par tout con , peut etre trouvée au commit updateplayer du 20/4
-      {System.show  fireitem}
-      local Fire FireList in
+      {System.show fireitem}
+      local Fire in
 	 Fire={ValidItem [mine missile drone sonar rien]  State}.1
 	 {System.show  fireList}
 
@@ -423,7 +421,7 @@ in
 
    %fct pour trouver quel est le X ou le Y qui se retrouve le plus dans les positions possibles de l'adversaire (pour placer un missile/drone)
    fun{Drone List}
-      local List0 List1 List2 List3 Count Drone2 Res1 Res2 in
+      local List0 List1 List2 List3 Drone2 Res1 Res2 in
 	 List0={ListOfPoint List 0} %liste tous avec les points
 	 List1={ListOfPoint List 1}
 	 List2={Lista Input.nRow}
@@ -534,28 +532,38 @@ in
    end
 
    fun{SayPassingDrone Drone State}
-      case Drone of drone(row _) then
-	 if State.pos.x==drone.2 then true
+      case Drone of drone(row X) then
+	 if State.pos.x==X then true
 	 else false
 	 end
-      [] drone(column _) then
-	 if State.pos.y==drone.2 then true
+      [] drone(column Y) then
+	 if State.pos.y==Y then true
 	 else false
 	 end
       else false
       end
    end
 
-   fun{SayAnswerDrone Drone IDEnemy Answer State}
-      local Xd Yd in
-	 if Drone==drone(row Xd) andthen Answer==false then
-	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos Xd 2}))}
-	 elseif Drone==drone(column Yd) andthen Answer==false then
-	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos Yd 4}))}
-	 elseif Drone==drone(row Xd) andthen Answer==true then
-	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos Xd 1}))}
-	 elseif Drone==drone(column Yd) andthen Answer==true then
-	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos Yd 3}))}
+   fun{SayAnswerDrone Drone Answer State}
+      {System.show sayanswerdrone}
+      local X Y in
+	 {System.show Drone}
+	 {System.show Answer}
+	 if Drone==drone(row X) andthen Answer==false then
+	    {System.show sayanswerdrone1}
+	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos X 2}))}
+	 elseif Drone==drone(column Y) andthen Answer==false then
+	    {System.show sayanswerdrone2}
+	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos Y 4}))}
+	 elseif Answer==true andthen Drone==drone(row 2) then
+	    {System.show sayanswerdrone3}
+	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos X 1}))}
+	 elseif Drone==drone(column Y) andthen Answer==true then
+	    {System.show sayanswerdrone4}
+	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos Y 3}))}
+	 else
+	    {System.show noMatching}
+	    nil
 	 end
       end
    end
@@ -581,10 +589,6 @@ in
       end
    end
 
-   proc{SayAnswerSonar ID Answer} %a impl take in account results
-      {System.show sayAnswerSonar}
-   end
-
    fun{SayDamageTaken ID Damage lifeLeft}
       {Browse 1}
    end
@@ -602,7 +606,9 @@ in
 
    fun{Move ?Position ?Direction State} 
       {System.show newmove}
-      if(State.nbMove==0) then {Record.adjoin State player(n:1 nbMove:5 immersed:false path:nil dir:nil dir2:{List.reverse {InverseList State.dir}})}
+      if(State.nbMove==1) then
+	 Position=State.pos
+	 {Record.adjoin State player(n:1 nbMove:5 immersed:false path:nil dir:nil dir2:{InverseList State.dir})}
       elseif(State.n==0) then 
 	 local ListPosDir in
 	    ListPosDir =  {GetNewPos State [east north west south]}
@@ -611,14 +617,18 @@ in
 	    end
 	    Position=ListPosDir.1
 	    Direction=ListPosDir.2
-	    {Record.adjoin State player(pos:Position path:Position|State.path dir:Direction|nil)}
+	    {Record.adjoin State player(pos:Position nbMove:State.nbMove-1 path:Position|State.path dir:Direction|State.dir)}
 	 end
       else
-	 case State.dir2.1 of
-	    east then {Record.adjoin State player(pos:pt(x:State.pos.x y:State.pos.y+1) nbMove:State.nbMove-1 path:pt(x:State.pos.x y:State.pos.y+1)|State.path dir2:State.dir2.2)}
-	 [] south then {Record.adjoin State player(pos:pt(x:State.pos.x+1 y:State.pos.y) nbMove:State.nbMove-1 path:pt(x:State.pos.x+1 y:State.pos.y)|State.path dir2:State.dir2.2)}
-	 [] west then {Record.adjoin State player(pos:pt(x:State.pos.x y:State.pos.y-1) nbMove:State.nbMove-1 path:pt(x:State.pos.x y:State.pos.y-1)|State.path dir2:State.dir2.2)}
-	 [] north then {Record.adjoin State player(pos:pt(x:State.pos.x-1 y:State.pos.y) nbMove:State.nbMove-1 path:pt(x:State.pos.x-1 y:State.pos.y)|State.path dir2:State.dir2.2)}
+	 local Pos in
+	    Direction=State.dir2.1
+	    case Direction of east then Pos=pt(x:State.pos.x y:State.pos.y+1)
+	    [] south then Pos=pt(x:State.pos.x+1 y:State.pos.y)
+	    [] west then Pos=pt(x:State.pos.x y:State.pos.y-1)
+	    [] north then Pos=pt(x:State.pos.x-1 y:State.pos.y)
+	    end
+	    Position=Pos
+	    {Record.adjoin State player(pos:Pos nbMove:State.nbMove-1 path:Pos|State.path dir:Direction|State.dir dir2:State.dir2.2)}
 	 end
       end
    end
@@ -627,16 +637,17 @@ in
       Stream
       Port
       PlayerState
-      Position
+      Drone
       ID2
-      KindItem
-      KindFire
+      Answer
    in
       {System.show bite}
       %immersed pour savoir si il est en surface ou pas
       PlayerState = player(id:id(id:ID color:Color name:fishy) ide:id(potPos:{TournerMap 1} life:Input.maxDamage) path:nil dir:nil n:0 dir2:nil nbMove:5 pos:nil immersed:false life:Input.maxDamage listMine:nil loadMine:0 numberMine:0 listMissile:nil loadMissile:0 numberMissile:0 loadDrone:0 numberDrone:0 loadSonar:0 numberSonar:0)  % list misssile?
-      %{NewPort Stream Port}      
-      Stream=[fireItem(?ID2 ?KindFire)]   
+      %{NewPort Stream Port}
+      Drone=drone(row 2)
+      Answer=true
+      Stream=[sayAnswerSonar(ID2 pt(x:1 y:1)) sayAnswerDrone(Drone ?ID2 Answer)]   
       thread
 	 {System.show start_playfdp}
 	 {TreatStream Stream PlayerState}
@@ -647,8 +658,6 @@ in
    proc {TreatStream Stream State}
       {System.show state}
       {System.show State}
-      {System.show stream}
-      {System.show Stream}
 
       case Stream of nil then skip
       [] initPosition(?ID ?Position)|T then
@@ -688,7 +697,7 @@ in
       [] fireItem(?ID ?KindFire)|T then
 	 {System.show fireItem}
 	 ID=State.id
-	 local Newstate ListFire in
+	 local Newstate in
 	    Newstate={FireItem ?KindFire  State}
 	    {TreatStream T Newstate}
 	 end
@@ -739,8 +748,10 @@ in
 	 end
 
       [] sayAnswerDrone(Drone ?ID ?Answer)|T then
+	 ID=State.id %A ENLEVER, L'ID CORRESPOND à CELUI DE L'ENNEMI
+	 {System.show sayAnswerDrone}
 	 local Newstate in
-	    Newstate={{SayAnswerDrone Drone ID Answer State} State}
+	    Newstate={{SayAnswerDrone Drone Answer State} State}
 	    {TreatStream T Newstate}
 	 end
       [] sayPassingDrone(Drone ?ID ?Answer)|T then
@@ -749,6 +760,7 @@ in
 	 {TreatStream T State}
 
       [] sayAnswerSonar(ID Answer)|T then
+	 ID=State.id %A ENLEVER, L'ID CORRESPOND à CELUI DE L'ENNEMI
 	 local Newstate in
 	    Newstate={Record.adjoin State player(ide:id(potPos:{RemoveSonar State.ide.potPos Answer.x Answer.y}))}
 	    {TreatStream T Newstate}
@@ -759,12 +771,14 @@ in
 	 {TreatStream T State}
 
       [] sayDeath(ID)|T then
+	 ID=State.id %A ENLEVER, L'ID CORRESPOND à CELUI DE L'ENNEMI
 	 local Newstate in
 	    Newstate={Record.adjoin State player(ide:id(life:0))}
 	    {TreatStream T Newstate}
 	 end
 
       [] sayDamageTaken(ID Damage LifeLeft)|T then
+	 ID=State.id %A ENLEVER, L'ID CORRESPOND à CELUI DE L'ENNEMI
 	 local Newstate in
 	    Newstate={Record.adjoin State player(ide:id(life:LifeLeft))}
 	    {TreatStream T Newstate}
