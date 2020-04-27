@@ -68,14 +68,6 @@ in
       end
    end
 
-    %Pour voir si la position est dans la map et dans l'eau
-   fun{IsValidPathEnemy E} %validée
-      local X Y in
-	 pt(x:X y:Y)=E
-	 (X >= 1 andthen X =< Input.nRow andthen Y >= 1 andthen Y =< Input.nColumn) andthen {IsIsland Input.map X Y} == 0
-      end
-   end
-
    fun{IsValidPath L E} %testé et approuvé
       local X Y in
 	 pt(x:X y:Y)=E
@@ -109,20 +101,6 @@ in
       [] H|T then
 	 if H==A then {RemoveFromList T A}
 	 else H|{RemoveFromList T A}
-	 end
-      end
-   end
-
-   % Cette fonction sert pour savoir si oui ou non la Direction est possible à la position pt(x:X y:Y) sur la Input.map
-   fun{Where Direction X Y}%validée
-      local CandPos in 
-	 case Direction of east then CandPos=pt(x:X y:Y+1)
-	 [] south then CandPos=pt(x:X+1 y:Y)
-	 [] west then CandPos=pt(x:X y:Y-1)
-	 [] north then CandPos=pt(x:X-1 y:Y)
-	 end
-	 if {IsValidPathEnemy CandPos}==false then false
-	 else true
 	 end
       end
    end
@@ -173,7 +151,6 @@ in
    end
 
    fun{RemoveDrone Li Xi N} %testée et approuvée
-      {System.show removedrone}
       local Point X Y in 
 	 if N==1 then %True et X 
 	    case Li of nil then nil
@@ -446,24 +423,40 @@ in
       end
    end
 
+   % Cette fonction sert pour savoir si oui ou non la Direction est possible à la position pt(x:X y:Y) sur la Input.map
+   fun{Where Direction X Y}%validée
+      local CandPos in 
+	 case Direction of east then CandPos=pt(x:X y:Y+1)
+	 [] south then CandPos=pt(x:X+1 y:Y)
+	 [] west then CandPos=pt(x:X y:Y-1)
+	 [] north then CandPos=pt(x:X-1 y:Y)
+	 end
+	 CandPos
+      end
+   end
 
+    %Pour voir si la position est dans la map et dans l'eau
+   fun{IsValidPathEnemy E} %validée
+      local X Y in
+	 pt(x:X y:Y)=E
+	 (X >= 1 andthen X =< Input.nRow andthen Y >= 1 andthen Y =< Input.nColumn) andthen {IsIsland Input.map X Y} == 0
+      end
+   end
+   
    fun {SayMove IDEnemy Direction State}
-      local List Point X Y SayMove2 in
-	 List=State.ide.potPos
+      local SayMove2 in
 	 fun{SayMove2 L}
-	    case List of nil then nil
-	    [] H|T then
-	       X=H.x
-	       Y=H.y
-	       Point=pt(x:X y:Y)
-	       if {Where Direction X Y}==true then
-		  Point|{SayMove2 T}
+	    case L of nil then nil
+	    [] pt(x:X y:Y)|T then
+	       if {IsValidPathEnemy {Where Direction X Y}}==true then
+		  {Where Direction X Y}|{SayMove2 T}
 	       else
+		  {System.show jesuispasici}
 		  {SayMove2 T}
 	       end
 	    end
 	 end
-	 {Record.adjoin State player(ide:id(potPos:{SayMove2 List}))}
+	 {SayMove2 State.ide.potPos}
       end
    end
 
@@ -545,28 +538,24 @@ in
    end
 
    fun{SayAnswerDrone Drone Answer State}
-      {System.show sayanswerdrone}
-      local X Y in
-	 {System.show Drone}
-	 {System.show Answer}
-	 if Drone==drone(row X) andthen Answer==false then
+      case Drone of drone(row X) then
+	 if Answer==false then
 	    {System.show sayanswerdrone1}
-	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos X 2}))}
-	 elseif Drone==drone(column Y) andthen Answer==false then
-	    {System.show sayanswerdrone2}
-	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos Y 4}))}
-	 elseif Answer==true andthen Drone==drone(row 2) then
-	    {System.show sayanswerdrone3}
-	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos X 1}))}
-	 elseif Drone==drone(column Y) andthen Answer==true then
-	    {System.show sayanswerdrone4}
-	    {Record.adjoin State player(ide:id(potPos:{RemoveDrone State.ide.potPos Y 3}))}
+	    {RemoveDrone State.ide.potPos X 2}
 	 else
-	    {System.show noMatching}
-	    nil
+	    {System.show sayanswerdrone3}
+	    {RemoveDrone State.ide.potPos X 1}
+	 end
+      [] drone(column Y) then 
+	 if Answer==false then
+	    {System.show sayanswerdrone2}
+	    {RemoveDrone State.ide.potPos Y 4}
+	 else 
+	    {System.show sayanswerdrone4}
+	    {RemoveDrone State.ide.potPos Y 3}
 	 end
       end
-   end
+   end 
 
    fun{SayPassingSonar State}
       local R C in
@@ -647,7 +636,7 @@ in
       %{NewPort Stream Port}
       Drone=drone(row 2)
       Answer=true
-      Stream=[sayAnswerSonar(ID2 pt(x:1 y:1)) sayAnswerDrone(Drone ?ID2 Answer)]   
+      Stream=[sayAnswerSonar(ID2 pt(x:1 y:1)) sayMove(ID2 west) sayMove(ID2 west) sayMove(ID2 west) sayAnswerDrone(drone(column 2) ID2 true)]   
       thread
 	 {System.show start_playfdp}
 	 {TreatStream Stream PlayerState}
@@ -719,8 +708,9 @@ in
 	 {TreatStream T State}
 
       [] sayMove(ID Direction)|T then
+	 {System.show sayMove}
 	 local Newstate in
-	    Newstate={{SayMove ID Direction State} State}
+	    Newstate={Record.adjoin State player(ide:id(potPos:{SayMove ID Direction State}))}
 	    {System.show saymooove_done}
 	    {TreatStream T Newstate}
 	 end
@@ -748,10 +738,10 @@ in
 	 end
 
       [] sayAnswerDrone(Drone ?ID ?Answer)|T then
-	 ID=State.id %A ENLEVER, L'ID CORRESPOND à CELUI DE L'ENNEMI
 	 {System.show sayAnswerDrone}
 	 local Newstate in
-	    Newstate={{SayAnswerDrone Drone Answer State} State}
+	    Newstate={Record.adjoin State player(ide:id(potPos:{SayAnswerDrone Drone Answer State}))}
+	    {System.show benIsAGod}
 	    {TreatStream T Newstate}
 	 end
       [] sayPassingDrone(Drone ?ID ?Answer)|T then
@@ -760,7 +750,6 @@ in
 	 {TreatStream T State}
 
       [] sayAnswerSonar(ID Answer)|T then
-	 ID=State.id %A ENLEVER, L'ID CORRESPOND à CELUI DE L'ENNEMI
 	 local Newstate in
 	    Newstate={Record.adjoin State player(ide:id(potPos:{RemoveSonar State.ide.potPos Answer.x Answer.y}))}
 	    {TreatStream T Newstate}
@@ -771,14 +760,12 @@ in
 	 {TreatStream T State}
 
       [] sayDeath(ID)|T then
-	 ID=State.id %A ENLEVER, L'ID CORRESPOND à CELUI DE L'ENNEMI
 	 local Newstate in
 	    Newstate={Record.adjoin State player(ide:id(life:0))}
 	    {TreatStream T Newstate}
 	 end
 
       [] sayDamageTaken(ID Damage LifeLeft)|T then
-	 ID=State.id %A ENLEVER, L'ID CORRESPOND à CELUI DE L'ENNEMI
 	 local Newstate in
 	    Newstate={Record.adjoin State player(ide:id(life:LifeLeft))}
 	    {TreatStream T Newstate}
