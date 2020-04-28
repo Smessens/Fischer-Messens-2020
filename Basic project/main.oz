@@ -81,7 +81,10 @@ in
 	 proc {ExplosionMissile Target}
 	    local MessageMissile Death ID LifeLeft Damage in
 	       {Send  Target sayMissileExplode(Player.id PosMissile MessageMissile)}
+         {System.show waitingMessageExplosion}
 	       {Wait MessageMissile}
+         {System.show postMessageExplosion}
+
 	       case MessageMissile
 	       of nil then skip
 	       []sayDeath(ID) then {Send GUI_port removePlayer(ID)} {List.forAll PortList proc{$ A} {Send A sayDeath(ID)} end}
@@ -265,7 +268,7 @@ in
 
    %Launch game in turn by turn
    proc {LauchgameTurn  AliveList PlayerLeft}
-%PlayerLeft < 2 
+%PlayerLeft < 2
       if PlayerLeft<1 then {System.show wiiinnneeerr}  {System.show AliveList} {System.show PlayerLeft} %{List.forAll AliveList proc{$ A} local Mes in{Send A.port isDead(Mes)}{Wait Mes}{System.show Mes} end end }
 
       else

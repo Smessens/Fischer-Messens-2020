@@ -292,6 +292,7 @@ in
 	 [] south then CandPos=pt(x:X+1 y:Y)
 	 [] west then CandPos=pt(x:X y:Y-1)
 	 [] north then CandPos=pt(x:X-1 y:Y)
+   [] surface then CandPos=pt(x:X y:Y)
 	 end
 	 CandPos
       end
@@ -445,18 +446,22 @@ in
    fun{Move ?Position ?Direction State}
       {System.show newmove}
       if(State.nbMove==1) then
+    Direction=surface
 	 Position=State.pos
 	 {Record.adjoin State player(n:1 nbMove:5 immersed:false path:nil dir:nil dir2:{InverseList State.dir})}
       elseif(State.n==0) then
 	 local ListPosDir in
 	    ListPosDir =  {GetNewPos State [east north west south]}
 	    if ListPosDir==nil then
+          Direction=surface
+          Position=State.pos
 	       {Record.adjoin State player(n:0 nbMove:5 immersed:false path:nil dir:nil)}
-	    end
+	    else
 	    Position=ListPosDir.1
 	    Direction=ListPosDir.2
 	    {Record.adjoin State player(pos:Position nbMove:State.nbMove-1 path:Position|State.path dir:Direction|State.dir)}
-	 end
+end
+   end
       else
 	 local Pos in
 	    Direction=State.dir2.1
@@ -523,7 +528,8 @@ in
 
    %choisis quelle item a launch , coder IA ici et fireItem fait la logistique
    fun {ValidItem ListFire State}
-      {System.show validitem}
+   {System.show validitem}
+   {System.show ListFire}
       if ListFire==nil then nil
       else
 	 case ListFire.1 of mine then
@@ -554,13 +560,15 @@ in
 	    else
 	       {ValidItem ListFire.2 State}
 	    end
+   [] rien then rien|{ValidItem ListFire.2 State}
+
 	 end
       end
    end
 
    fun{FireItem ?KindFire State} % Listfire étrange? version smart buggé donc remplacé par tout con , peut etre trouvée au commit updateplayer du 20/4
       local Fire in
-	 Fire={ValidItem [sonar drone missile mine]  State}.1
+	 Fire={ValidItem [sonar drone missile mine rien]  State}.1
 	 {System.show youBurnWithUs}
 	 {System.show Fire}
 	 case Fire of mine then
@@ -689,7 +697,7 @@ in
       [] sayMove(ID Direction)|T then
 	 {System.show sayMove}
 	 local Newstate in
-	    Newstate={Record.adjoin State player(ide:id(potPos:{SayMove ID Direction State}))}
+	    Newstate={Record.adjoin State player(ide:id(potPos:{SayMove ID Direction State} life:State.ide.life))}
 	    {System.show saymooove_done}
 	    {TreatStream T Newstate}
 	 end
@@ -711,7 +719,8 @@ in
       [] sayMissileExplode(ID Position ?Message)|T then %simon
 	 {System.show sayMissileExplode1}
 	 local Newstate in
-	    Newstate={SayMissileExplode ID Position ?Message State}
+	    Newstate={SayMissileExplode ID Position Message State}
+      {System.show Message}
 	    {System.show missileecplosion}
 	    {TreatStream T Newstate}
 	 end
@@ -719,7 +728,7 @@ in
       [] sayMineExplode(ID Position ?Message)|T then %simon
 	 {System.show sayMineExplode1}
 	 local Newstate in
-	    Newstate={SayMineExplode ID Position ?Message State}
+	    Newstate={SayMineExplode ID Position Message State}
 	    {System.show sayMineExplode2}
 	    {TreatStream T Newstate}
 	 end
@@ -727,7 +736,7 @@ in
       [] sayAnswerDrone(Drone ?ID ?Answer)|T then
 	 {System.show sayAnswerDrone1}
 	 local Newstate in
-	    Newstate={Record.adjoin State player(ide:id(potPos:{SayAnswerDrone Drone Answer State}))}
+	    Newstate={Record.adjoin State player(ide:id(potPos:{SayAnswerDrone Drone Answer State} life:State.ide.life))}
 	    {System.show benIsAGod}
 	    {System.show sayAnswerDrone2}
 	    {TreatStream T Newstate}
@@ -742,7 +751,7 @@ in
       [] sayAnswerSonar(ID Answer)|T then
 	 {System.show sayAnswerSonar1}
 	 local Newstate in
-	    Newstate={Record.adjoin State player(ide:id(potPos:{RemoveSonar State.ide.potPos Answer.x Answer.y}))}
+	    Newstate={Record.adjoin State player(ide:id(potPos:{RemoveSonar State.ide.potPos Answer.x Answer.y} life:State.ide.life))}
 	    {System.show sayAnswerSonar2}
 	    {TreatStream T Newstate}
 	 end
@@ -756,7 +765,7 @@ in
       [] sayDeath(ID)|T then
 	 {System.show isLaMort1}
 	 local Newstate in
-	    Newstate={Record.adjoin State player(ide:id(life:0))}
+	    Newstate={Record.adjoin State player(ide:id(potPos:State.ide.potPos life:0))}
 	    {System.show isLaMort2}
 	    {TreatStream T Newstate}
 	 end
@@ -764,9 +773,9 @@ in
       [] sayDamageTaken(ID Damage LifeLeft)|T then %dégats des ennemis seulement
 	 {System.show isLesDegats1}
 	 local Newstate in
-	    Newstate={Record.adjoin State player(ide:id(life:LifeLeft))}
+	 %   Newstate={Record.adjoin State player(ide:id(potPos:State.ide.posPot life:LifeLeft))}
 	    {System.show isLesDegats2}
-	    {TreatStream T Newstate}
+	    {TreatStream T State}
 	 end
 
       else
