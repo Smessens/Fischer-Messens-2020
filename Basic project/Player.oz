@@ -358,6 +358,7 @@ in
 
 	    end
 	 else
+      Message=null
 	    State
 	 end
       end
@@ -382,8 +383,10 @@ in
 	       {Record.adjoin State player(life:State.life-1)}
 	    end
 	 else
-	    null
+   Message=null
+   State
 	 end
+
       end
    end
 
