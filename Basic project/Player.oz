@@ -625,11 +625,12 @@ in
 
       case Stream of nil then skip
       [] initPosition(?ID ?Position)|T then
-	 {System.show initposition}
+	 {System.show initPosition1}
 	 ID=State.id
 	 Position={RandomPosition Input.map}
 	 local Newstate in
 	    Newstate={Record.adjoin State player(pos:Position path:Position|nil)}
+	    {System.show initPosition2}
 	    {TreatStream T Newstate}
 	 end
 
@@ -645,8 +646,8 @@ in
       [] dive|T then
 	 {System.show dive}
 	 local Newstate in
-	    {System.show plongeeSousMarine}
 	    Newstate={Record.adjoin State player(immersed:true)}
+	    {System.show plongeeSousMarine}
 	    {TreatStream T Newstate}
 	 end
 
@@ -655,14 +656,16 @@ in
 	 ID=State.id
 	 local Newstate in
 	    Newstate={ChargeItem ?KindItem State}
+	    {System.show chargeItem2}
 	    {TreatStream T Newstate}
 	 end
 
       [] fireItem(?ID ?KindFire)|T then
+	 {System.show fireItem1}
 	 ID=State.id
 	 local Newstate in
 	    Newstate={FireItem ?KindFire  State}
-      {System.show fire_done}
+	    {System.show fire_done}
 	    {TreatStream T Newstate}
 	 end
 
@@ -680,6 +683,7 @@ in
 	 if State.life==0 then Answer=true
 	 else Answer=false
 	 end
+	 {System.show isDead2}
 	 {TreatStream T State}
 
       [] sayMove(ID Direction)|T then
@@ -690,69 +694,86 @@ in
 	    {TreatStream T Newstate}
 	 end
 
-      [] saySurface(ID)|T then {SaySurface ID}
+      [] saySurface(ID)|T then
+	 {System.show saySurface}
+	 {SaySurface ID}
 	 {TreatStream T State}
 
       [] sayCharge(ID KindItem)|T then {SayCharge ID KindItem}
 	 {System.show sayCharge_done}
 	 {TreatStream T State}
 
-      [] sayMinePlaced(ID)|T then {SayMinePlaced ID}
+      [] sayMinePlaced(ID)|T then
+	 {System.show sayMinePlaced}
+	 {SayMinePlaced ID}
 	 {TreatStream T State}
 
       [] sayMissileExplode(ID Position ?Message)|T then %simon
+	 {System.show sayMissileExplode1}
 	 local Newstate in
-      {System.show missileecplosion}
 	    Newstate={SayMissileExplode ID Position ?Message State}
+	    {System.show missileecplosion}
 	    {TreatStream T Newstate}
 	 end
 
       [] sayMineExplode(ID Position ?Message)|T then %simon
+	 {System.show sayMineExplode1}
 	 local Newstate in
 	    Newstate={SayMineExplode ID Position ?Message State}
+	    {System.show sayMineExplode2}
 	    {TreatStream T Newstate}
 	 end
 
       [] sayAnswerDrone(Drone ?ID ?Answer)|T then
-	 {System.show sayAnswerDrone}
+	 {System.show sayAnswerDrone1}
 	 local Newstate in
 	    Newstate={Record.adjoin State player(ide:id(potPos:{SayAnswerDrone Drone Answer State}))}
 	    {System.show benIsAGod}
+	    {System.show sayAnswerDrone2}
 	    {TreatStream T Newstate}
 	 end
       [] sayPassingDrone(Drone ?ID ?Answer)|T then
+	 {System.show sayPassingDrone1}
 	 ID=State.id
 	 Answer={SayPassingDrone Drone State}
+	 {System.show sayPassingDrone2}
 	 {TreatStream T State}
 
       [] sayAnswerSonar(ID Answer)|T then
+	 {System.show sayAnswerSonar1}
 	 local Newstate in
 	    Newstate={Record.adjoin State player(ide:id(potPos:{RemoveSonar State.ide.potPos Answer.x Answer.y}))}
+	    {System.show sayAnswerSonar2}
 	    {TreatStream T Newstate}
 	 end
       [] sayPassingSonar(?ID ?Answer)|T then
+	 {System.show sayPassingSonar1}
 	 ID=State.id
 	 Answer={SayPassingSonar State}
+	 {System.show sayPassingSonar2}
 	 {TreatStream T State}
 
       [] sayDeath(ID)|T then
+	 {System.show isLaMort1}
 	 local Newstate in
 	    Newstate={Record.adjoin State player(ide:id(life:0))}
+	    {System.show isLaMort2}
 	    {TreatStream T Newstate}
 	 end
 
-      [] sayDamageTaken(ID Damage LifeLeft)|T then
+      [] sayDamageTaken(ID Damage LifeLeft)|T then %dégats des ennemis seulement
+	 {System.show isLesDegats1}
 	 local Newstate in
 	    Newstate={Record.adjoin State player(ide:id(life:LifeLeft))}
+	    {System.show isLesDegats2}
 	    {TreatStream T Newstate}
 	 end
 
       else
+	 {System.show noMatchingInTreatStream}
 	 {System.show Stream}
 
       end
    end
-
-
 end
 % enlevé tout les {{...} State } ... smart?
