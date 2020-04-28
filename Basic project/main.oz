@@ -16,20 +16,13 @@ define
    PlayerList
    PortList
 
+   Thirdfun
    LauchgameTurn
    Playturn
-   InitiatePlayers
-   MakePortList
    Random
    SimultaneousGame
    StimulateThinking
    CreatePlayer
-   Thirdfun
-
-
-
-
-
 in
 
     %return a random number between 0 and N
@@ -168,8 +161,8 @@ in
    end
 
    proc {StimulateThinking}
-      {Delay ({OS.rand} mod (Input.thinkMax-Input.thinkMin+1)) + Input.thinkMin}
-      %{Delay 11}
+      %{Delay ({OS.rand} mod (Input.thinkMax-Input.thinkMin+1)) + Input.thinkMin}
+      {Delay {Random 100}}
 
    end
 
@@ -258,6 +251,10 @@ in
 	    if MessageDeath == false then
 	       {OneTurn 0}
 	       {SimultaneousGame Player}
+      else
+          {System.show 'Player dead'}
+          {System.show Player.id}
+
 	    end
 	 end
       end%fin local
@@ -268,8 +265,8 @@ in
 
    %Launch game in turn by turn
    proc {LauchgameTurn  AliveList PlayerLeft}
-
-      if PlayerLeft<2 then {System.show wiiinnneeerr}  {System.show AliveList} {System.show PlayerLeft} %{List.forAll AliveList proc{$ A} local Mes in{Send A.port isDead(Mes)}{Wait Mes}{System.show Mes} end end }
+%PlayerLeft < 2 
+      if PlayerLeft<1 then {System.show wiiinnneeerr}  {System.show AliveList} {System.show PlayerLeft} %{List.forAll AliveList proc{$ A} local Mes in{Send A.port isDead(Mes)}{Wait Mes}{System.show Mes} end end }
 
       else
 	 local Message in
@@ -295,6 +292,7 @@ in
 
 
 
+
 	% initialise le GUI port ainsi que les players et leurs positions
    GUI_port = {GUI.portWindow}
    {Send GUI_port buildWindow}
@@ -311,6 +309,7 @@ in
 
    else
       {List.forAll PlayerList (proc {$ Player} thread {SimultaneousGame Player} end end)}
+      {System.show endgame}
    end
 end
 

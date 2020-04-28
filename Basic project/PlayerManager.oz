@@ -1,7 +1,7 @@
 functor
 import
     Player1 at 'PlayerBasicAI.ozf'
-    Player2 at 'PlayerBasicAI2.ozf'
+    Player2 at 'Player.ozf'
     Player3 at 'PlayerBasicAI3.ozf'
 
 
