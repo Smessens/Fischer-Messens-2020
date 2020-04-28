@@ -80,7 +80,7 @@ in
 
 
    %play turn by turn
-   fun {Playturn Player Round}
+   fun {Playturn Player}
 
       local PosMine PosMissile ExplosionMissile  ExplosionMine in
 
@@ -267,25 +267,24 @@ in
 
 
    %Launch game in turn by turn
-   proc {LauchgameTurn Round AliveList PlayerLeft}
-      if PlayerLeft<2 then {System.show wiiinnneeerr} {System.show AliveList} {System.show PlayerLeft}
+   proc {LauchgameTurn  AliveList PlayerLeft}
+
+      if PlayerLeft<2 then {System.show wiiinnneeerr}  {System.show AliveList} {System.show PlayerLeft} %{List.forAll AliveList proc{$ A} local Mes in{Send A.port isDead(Mes)}{Wait Mes}{System.show Mes} end end }
 
       else
 	 local Message in
 	    case AliveList
 	    of nil then {System.show 'no player , something went wrong'}
 	    [] H|T then
-	       if H==round then  {LauchgameTurn Round+1 {List.append T H|nil } PlayerLeft}
+	       if H==nil then {LauchgameTurn {List.append T H|nil } PlayerLeft}
 	       else
-		  if H==nil then {LauchgameTurn Round {List.append T H|nil } PlayerLeft}
-		  else
-		     {Send H.port isDead(Message)} {Wait Message}
-		     if Message==false then if {Playturn H Round}==false then {LauchgameTurn Round {List.append T H|nil } PlayerLeft}
-					    else {LauchgameTurn Round T PlayerLeft-1}
-					    end
-		     else {Send GUI_port removePlayer(H.id)} {LauchgameTurn Round T PlayerLeft }
-		     end
+		  {Send H.port isDead(Message)} {Wait Message}
+		  if Message==false then if {Playturn H }==false then {LauchgameTurn {List.append T H|nil } PlayerLeft}
+					 else {LauchgameTurn T PlayerLeft-1}
+					 end
+		  else {Send GUI_port removePlayer(H.id)} {LauchgameTurn T PlayerLeft-1 }
 		  end
+
 	       end
 	    end
 	 end
@@ -308,14 +307,14 @@ in
    {List.forAll PortList proc {$ A} {Send A dive} end}
 
    if Input.isTurnByTurn then
-      {LauchgameTurn 0 {List.append PlayerList round|nil} 3 }
+      {LauchgameTurn PlayerList Input.nbPlayer }
 
    else
       {List.forAll PlayerList (proc {$ Player} thread {SimultaneousGame Player} end end)}
    end
 end
 
-%deal with endgame qssimul
+%deal with endgame simul
 
 
 
